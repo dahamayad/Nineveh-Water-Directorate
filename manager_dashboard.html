@@ -783,117 +783,9 @@
                 <button id="cancelLogoutBtn" class="btn btn-secondary"
                     style="width: auto; min-width: 130px; padding: 14px 24px;">
                     <i class="fas fa-times-circle"></i> إلغاء
-                </button>
-            </div>
-        </div>
-    </div>
 
-    <script>
-        // Initialize global variables if not already done by firebase_service.js
-        var areas = window.areas || [];
-        var employees = window.employees || [];
-        var schedules = window.schedules || [];
-
-        function loadData() {
-            try {
-                const lAreas = localStorage.getItem('areas');
-                const lEmps = localStorage.getItem('employees');
-                const lScheds = localStorage.getItem('schedules');
-
-                if (lAreas) areas = JSON.parse(lAreas);
-                if (lEmps) employees = JSON.parse(lEmps);
-                if (lScheds) schedules = JSON.parse(lScheds);
-
-                updateUI();
-            } catch (e) {
-                console.error("Error loading local data", e);
-            }
-        }
-
-        function persistAll() {
-            // 1. Save to LocalStorage (Backup)
-            localStorage.setItem('areas', JSON.stringify(areas));
-            localStorage.setItem('employees', JSON.stringify(employees));
-            localStorage.setItem('schedules', JSON.stringify(schedules));
-
-            // 2. Save to Firebase
-            if (typeof saveAllData === 'function') {
-                saveAllData(areas, employees, schedules).catch(err => console.error("Firebase save failed:", err));
-            }
-        }
-
-        function updateUI() {
-            updateEmployeeList();
-            updateScheduleList();
-
-            // Update stats
-            const totalEmps = document.getElementById('totalEmployees');
-            const totalAreas = document.getElementById('totalAreas');
-            const totalScheds = document.getElementById('totalSchedules');
-
-            if (totalEmps) totalEmps.textContent = employees.length;
-            if (totalAreas) totalAreas.textContent = areas.length;
-            if (totalScheds) totalScheds.textContent = schedules.length;
-
-            // Update main selects
-            const areaSelect = document.getElementById('scheduleArea');
-            if (areaSelect) {
-                const currentVal = areaSelect.value;
-                areaSelect.innerHTML = '<option value="">اختر المنطقة</option>';
-                areas.forEach(a => {
-                    const opt = document.createElement('option');
-                    opt.value = a.id;
-                    opt.textContent = a.name;
-                    areaSelect.appendChild(opt);
-                });
-                areaSelect.value = currentVal;
-            }
-
-            const empSelect = document.getElementById('scheduleEmployee');
-            if (empSelect) {
-                const currentVal = empSelect.value;
-                empSelect.innerHTML = '<option value="">اختر الموظف</option>';
-                employees.forEach(e => {
-                    const opt = document.createElement('option');
-                    opt.value = e.id;
-                    opt.textContent = e.name;
-                    empSelect.appendChild(opt);
-                });
-                empSelect.value = currentVal;
-            }
-        }
-
-        function populateAreaEditorSelects(currentArea = null, currentEmp = null) {
-            const areaSelect = document.getElementById('areaEditorSelect');
-            const empSelect = document.getElementById('areaEditorEmployee');
-            if (!areaSelect || !empSelect) return;
-
-            areaSelect.innerHTML = '<option value="">اختر المنطقة</option>';
-            areas.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a.id;
-                opt.textContent = a.name;
-                if (a.id == currentArea) opt.selected = true;
-                areaSelect.appendChild(opt);
-            });
-
-            empSelect.innerHTML = '<option value="">اختر الموظف</option>';
-            employees.forEach(e => {
-                const opt = document.createElement('option');
-                opt.value = e.id;
-                opt.textContent = e.name;
-                if (e.id == currentEmp) opt.selected = true;
-                empSelect.appendChild(opt);
-            });
-        }
-
-        function updateEmployeeList() {
-            const container = document.getElementById('employeesContainer');
-            const search = document.getElementById('employeeSearch').value.toLowerCase();
-            container.innerHTML = '';
-
-            employees.forEach(emp => {
-                if (emp.name.toLowerCase().includes(search) || emp.phone.includes(search)) {
+                    employees.forEach(emp => {
+                    if (emp.name.toLowerCase().includes(search) || emp.phone.includes(search)) {
                     const div = document.createElement('div');
                     div.className = 'schedule-item';
                     div.style.borderRight = '4px solid var(--primary)';
@@ -908,76 +800,76 @@
                         <i class="fas fa-phone"></i> ${emp.phone}
                     </div>`;
                     container.appendChild(div);
-                }
-            });
-        }
+                    }
+                    });
+                    }
 
-        function updateScheduleList() {
-            const container = document.getElementById('managerSchedulesContainer');
-            if (!container) return;
-            container.innerHTML = '';
+                    function updateScheduleList() {
+                    const container = document.getElementById('managerSchedulesContainer');
+                    if (!container) return;
+                    container.innerHTML = '';
 
-            const areaEmployeeMap = new Map();
-            schedules.forEach(sch => {
-                if (!areaEmployeeMap.has(sch.areaId)) {
+                    const areaEmployeeMap = new Map();
+                    schedules.forEach(sch => {
+                    if (!areaEmployeeMap.has(sch.areaId)) {
                     areaEmployeeMap.set(sch.areaId, new Set());
-                }
-                areaEmployeeMap.get(sch.areaId).add(sch.employeeId);
-            });
+                    }
+                    areaEmployeeMap.get(sch.areaId).add(sch.employeeId);
+                    });
 
-            const gradients = [
-                'linear-gradient(135deg, rgba(79, 172, 254, 0.15), rgba(0, 242, 254, 0.1))',
-                'linear-gradient(135deg, rgba(0, 230, 118, 0.15), rgba(0, 184, 148, 0.1))',
-                'linear-gradient(135deg, rgba(255, 234, 0, 0.15), rgba(255, 193, 7, 0.1))',
-                'linear-gradient(135deg, rgba(255, 0, 128, 0.15), rgba(156, 39, 176, 0.1))',
-                'linear-gradient(135deg, rgba(255, 87, 34, 0.15), rgba(244, 67, 54, 0.1))'
-            ];
+                    const gradients = [
+                    'linear-gradient(135deg, rgba(79, 172, 254, 0.15), rgba(0, 242, 254, 0.1))',
+                    'linear-gradient(135deg, rgba(0, 230, 118, 0.15), rgba(0, 184, 148, 0.1))',
+                    'linear-gradient(135deg, rgba(255, 234, 0, 0.15), rgba(255, 193, 7, 0.1))',
+                    'linear-gradient(135deg, rgba(255, 0, 128, 0.15), rgba(156, 39, 176, 0.1))',
+                    'linear-gradient(135deg, rgba(255, 87, 34, 0.15), rgba(244, 67, 54, 0.1))'
+                    ];
 
-            let colorIndex = 0;
-            areas.forEach(area => {
-                const employeeIds = areaEmployeeMap.get(area.id);
-                if (!employeeIds || employeeIds.size === 0) return;
+                    let colorIndex = 0;
+                    areas.forEach(area => {
+                    const employeeIds = areaEmployeeMap.get(area.id);
+                    if (!employeeIds || employeeIds.size === 0) return;
 
-                const bgGradient = gradients[colorIndex % gradients.length];
-                colorIndex++;
+                    const bgGradient = gradients[colorIndex % gradients.length];
+                    colorIndex++;
 
-                const div = document.createElement('div');
-                div.className = 'schedule-item';
-                div.style.background = bgGradient;
-                div.style.borderRight = 'none';
+                    const div = document.createElement('div');
+                    div.className = 'schedule-item';
+                    div.style.background = bgGradient;
+                    div.style.borderRight = 'none';
 
-                let employeesHTML = '';
-                employeeIds.forEach(empId => {
+                    let employeesHTML = '';
+                    employeeIds.forEach(empId => {
                     const employee = employees.find(e => e.id === empId);
                     const sch = schedules.find(s => s.areaId === area.id && s.employeeId === empId);
 
                     if (employee && sch) {
-                        let statusIcon = '<i class="far fa-clock" style="color:#aaa;"></i>';
-                        let statusText = 'قيد الانتظار';
-                        let statusColor = '#aaa';
+                    let statusIcon = '<i class="far fa-clock" style="color:#aaa;"></i>';
+                    let statusText = 'قيد الانتظار';
+                    let statusColor = '#aaa';
 
-                        if (sch.status === 'completed') {
-                            statusIcon = '<i class="fas fa-check-circle" style="color:var(--success);"></i>';
-                            statusText = 'مكتمل';
-                            statusColor = 'var(--success)';
-                        } else if (sch.status === 'in-progress') {
-                            statusIcon = '<i class="fas fa-spinner fa-spin" style="color:var(--warning);"></i>';
-                            statusText = 'قيد التنفيذ';
-                            statusColor = 'var(--warning)';
-                        }
+                    if (sch.status === 'completed') {
+                    statusIcon = '<i class="fas fa-check-circle" style="color:var(--success);"></i>';
+                    statusText = 'مكتمل';
+                    statusColor = 'var(--success)';
+                    } else if (sch.status === 'in-progress') {
+                    statusIcon = '<i class="fas fa-spinner fa-spin" style="color:var(--warning);"></i>';
+                    statusText = 'قيد التنفيذ';
+                    statusColor = 'var(--warning)';
+                    }
 
-                        let scheduleDetailsHTML = '';
-                        if (sch.date || sch.startTime) {
-                            scheduleDetailsHTML = `<div
+                    let scheduleDetailsHTML = '';
+                    if (sch.date || sch.startTime) {
+                    scheduleDetailsHTML = `<div
                         style="margin-top:4px;font-size:0.8rem;color:#ddd;display:flex;gap:8px;flex-wrap:wrap;">
                         ${sch.date ? `<span><i class="far fa-calendar"></i> ${sch.date}</span>` : ''}
                         ${sch.startTime ? `<span><i class="far fa-clock"></i> ${sch.startTime} - ${sch.endTime ||
-                                    '?'}</span>` : ''}
+                            '?'}</span>` : ''}
                         ${sch.duration ? `<span><i class="fas fa-hourglass-half"></i> ${sch.duration}س</span>` : ''}
                     </div>`;
-                        }
+                    }
 
-                        employeesHTML += `<div
+                    employeesHTML += `<div
                         style="background:rgba(0,0,0,0.2);padding:8px;border-radius:8px;margin-bottom:8px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <strong style="color:white;">${employee.name}</strong>
@@ -994,9 +886,9 @@
                         </div>
                     </div>`;
                     }
-                });
+                    });
 
-                div.innerHTML = `<div
+                    div.innerHTML = `<div
                         style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                         <h4 style="margin:0;color:white;text-shadow:0 1px 2px rgba(0,0,0,0.5);">${area.name}</h4>
                         <div style="display:flex;gap:5px;">
@@ -1007,425 +899,425 @@
                         </div>
                     </div>
                     ${employeesHTML}`;
-                container.appendChild(div);
-            });
-        }
-
-        document.getElementById('addEmployee').onclick = () => {
-            const name = document.getElementById('employeeName').value.trim();
-            const phone = document.getElementById('employeePhone').value.trim();
-            if (!name || !phone) return showToast('يرجى إدخال الاسم ورقم الهاتف', 'danger');
-
-            employees.push({ id: Date.now(), name, phone });
-            document.getElementById('employeeName').value = '';
-            document.getElementById('employeePhone').value = '';
-            persistAll();
-            updateUI();
-            showToast('تم إضافة الموظف بنجاح');
-        };
-
-        document.getElementById('addArea').onclick = () => {
-            const name = document.getElementById('areaName').value.trim();
-            const desc = document.getElementById('areaDescription').value.trim();
-            const x = document.getElementById('areaCoordX').value;
-            const y = document.getElementById('areaCoordY').value;
-            if (!name) return showToast('يرجى إدخال اسم المنطقة', 'danger');
-
-            const newArea = {
-                id: Date.now(),
-                name,
-                description: desc,
-                lat: y ? parseFloat(y) : null,
-                lng: x ? parseFloat(x) : null,
-                geojson: window.drawnGeoJSON || null
-            };
-
-            areas.push(newArea);
-            document.getElementById('areaName').value = '';
-            document.getElementById('areaDescription').value = '';
-            document.getElementById('areaCoordX').value = '';
-            document.getElementById('areaCoordY').value = '';
-            window.drawnGeoJSON = null;
-            persistAll();
-            updateUI();
-            showToast('تم إضافة المنطقة بنجاح');
-        };
-
-        document.getElementById('addSchedule').onclick = () => {
-            const areaId = Number(document.getElementById('scheduleArea').value);
-            const empId = Number(document.getElementById('scheduleEmployee').value);
-            if (!areaId || !empId) return showToast('يرجى اختيار المنطقة والموظف', 'danger');
-
-            schedules.push({
-                id: Date.now(),
-                areaId,
-                employeeId: empId,
-                date: '',
-                startTime: '',
-                duration: 4,
-                status: 'pending'
-            });
-
-            persistAll();
-            updateUI();
-            showToast('تم تعيين المنطقة للموظف بنجاح');
-        };
-
-        document.getElementById('openDrawAreaBtn').onclick = () => {
-            const drawWindow = window.open('draw_map.html', 'drawMap', 'width=1200,height=800');
-            if (drawWindow) {
-                showToast('تم فتح نافذة الرسم');
-            } else {
-                showToast('فشل فتح نافذة الرسم. يرجى السماح بالنوافذ المنبثقة', 'danger');
-            }
-        };
-
-        function showToast(msg, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = 'notification-toast';
-            toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--success)';
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-
-        window.deleteEmployee = (id) => {
-            if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
-                employees = employees.filter(e => e.id !== id);
-                persistAll();
-                updateUI();
-            }
-        };
-
-        window.deleteSchedule = (id) => {
-            if (confirm('هل أنت متأكد من حذف هذا الجدول؟')) {
-                schedules = schedules.filter(s => s.id !== id);
-                persistAll();
-                updateUI();
-            }
-        };
-
-        window.editAreaCard = (areaId) => {
-            const area = areas.find(a => a.id === areaId);
-            if (!area) return;
-
-            document.getElementById('scheduleArea').value = areaId;
-            areaEditorSelect.innerHTML = '<option value="">اختر المنطقة لتعديلها</option>';
-            areas.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a.id;
-                opt.textContent = a.name;
-                if (a.id === areaId) opt.selected = true;
-                areaEditorSelect.appendChild(opt);
-            });
-
-            areaEditorName.value = area.name;
-            areaEditorDesc.value = area.description || '';
-            populateAreaEditorEmployees(areaId);
-            areaEditorModal.style.display = 'flex';
-        };
-
-        window.deleteAreaCard = (areaId) => {
-            const area = areas.find(a => a.id === areaId);
-            if (!area) return;
-
-            if (confirm(`هل أنت متأكد من حذف منطقة "${area.name}" ؟ سيتم حذف جميع التعيينات المرتبطة بها.`)) {
-                areas = areas.filter(a => a.id !== areaId);
-                schedules = schedules.filter(s => s.areaId !== areaId);
-                persistAll();
-                updateUI();
-                showToast('تم حذف المنطقة بنجاح');
-            }
-        };
-
-        window.updateCoordinates = (lat, lng, geojson) => {
-            document.getElementById('areaCoordX').value = lng;
-            document.getElementById('areaCoordY').value = lat;
-            window.drawnGeoJSON = geojson;
-            showToast('تم استلام الإحداثيات من الخريطة');
-        };
-
-        const areaEditorModal = document.getElementById('areaEditorModal');
-        const areaEditorSelect = document.getElementById('areaEditorSelect');
-        const areaEditorName = document.getElementById('areaEditorName');
-        const areaEditorDesc = document.getElementById('areaEditorDesc');
-        const areaEditorEmployee = document.getElementById('areaEditorEmployee');
-
-        function populateAreaEditorEmployees(areaId) {
-            areaEditorEmployee.innerHTML = '<option value="">اختر الموظف</option>';
-            const assignedSchedule = schedules.find(s => s.areaId === areaId);
-            const assignedEmployeeId = assignedSchedule ? assignedSchedule.employeeId : null;
-
-            employees.forEach(emp => {
-                const opt = document.createElement('option');
-                opt.value = emp.id;
-                opt.textContent = emp.name;
-                if (emp.id === assignedEmployeeId) {
-                    opt.selected = true;
-                }
-                areaEditorEmployee.appendChild(opt);
-            });
-        }
-
-        document.getElementById('openAreaEditorBtn').onclick = () => {
-            const selectedAreaId = document.getElementById('scheduleArea').value;
-            if (!selectedAreaId) return showToast('يرجى اختيار منطقة أولاً', 'danger');
-
-            areaEditorSelect.innerHTML = '<option value="">اختر المنطقة لتعديلها</option>';
-            areas.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a.id;
-                opt.textContent = a.name;
-                if (a.id == selectedAreaId) opt.selected = true;
-                areaEditorSelect.appendChild(opt);
-            });
-
-            const area = areas.find(a => a.id == selectedAreaId);
-            if (area) {
-                areaEditorName.value = area.name;
-                areaEditorDesc.value = area.description || '';
-                populateAreaEditorEmployees(Number(selectedAreaId));
-            }
-            areaEditorModal.style.display = 'flex';
-        };
-
-        document.getElementById('closeAreaEditorModal').onclick = () => {
-            areaEditorModal.style.display = 'none';
-        };
-
-        window.onclick = (event) => {
-            if (event.target == areaEditorModal) {
-                areaEditorModal.style.display = 'none';
-            }
-            if (event.target == employeeEditorModal) {
-                employeeEditorModal.style.display = 'none';
-            }
-            if (event.target == logoutModal) {
-                logoutModal.style.display = 'none';
-            }
-            if (event.target == document.getElementById('notificationModal')) {
-                document.getElementById('notificationModal').style.display = 'none';
-            }
-        };
-
-        areaEditorSelect.onchange = () => {
-            const id = areaEditorSelect.value;
-            if (!id) return;
-            const area = areas.find(a => a.id == id);
-
-            if (area) {
-                areaEditorName.value = area.name;
-                areaEditorDesc.value = area.description || '';
-                populateAreaEditorEmployees(Number(id));
-            }
-        };
-
-        document.getElementById('saveAreaEditBtn').onclick = () => {
-            const id = areaEditorSelect.value;
-            if (!id) return showToast('يرجى اختيار منطقة', 'danger');
-
-            const name = areaEditorName.value.trim();
-            const desc = areaEditorDesc.value.trim();
-            const selectedEmployeeId = Number(areaEditorEmployee.value);
-
-            if (!name) return showToast('يرجى إدخال اسم المنطقة', 'danger');
-
-            const areaIndex = areas.findIndex(a => a.id == id);
-
-            if (areaIndex !== -1) {
-                areas[areaIndex].name = name;
-                areas[areaIndex].description = desc;
-
-                schedules = schedules.filter(s => s.areaId != id);
-
-                if (selectedEmployeeId) {
-                    schedules.push({
-                        id: Date.now(),
-                        areaId: Number(id),
-                        employeeId: selectedEmployeeId,
-                        date: '',
-                        startTime: '',
-                        duration: 4,
-                        status: 'pending'
+                    container.appendChild(div);
                     });
-                }
+                    }
 
-                persistAll();
-                updateUI();
-                showToast('تم تحديث المنطقة بنجاح');
-                areaEditorModal.style.display = 'none';
-            }
-        };
+                    document.getElementById('addEmployee').onclick = () => {
+                    const name = document.getElementById('employeeName').value.trim();
+                    const phone = document.getElementById('employeePhone').value.trim();
+                    if (!name || !phone) return showToast('يرجى إدخال الاسم ورقم الهاتف', 'danger');
 
-        document.getElementById('deleteAreaBtn').onclick = () => {
-            const id = areaEditorSelect.value;
-            if (!id) return showToast('يرجى اختيار منطقة', 'danger');
+                    employees.push({ id: Date.now(), name, phone });
+                    document.getElementById('employeeName').value = '';
+                    document.getElementById('employeePhone').value = '';
+                    persistAll();
+                    updateUI();
+                    showToast('تم إضافة الموظف بنجاح');
+                    };
 
-            if (confirm('هل أنت متأكد من حذف هذه المنطقة؟ سيتم حذف جميع الجداول المرتبطة بها.')) {
-                areas = areas.filter(a => a.id != id);
-                schedules = schedules.filter(s => s.areaId != id);
-                persistAll();
-                updateUI();
-                showToast('تم حذف المنطقة بنجاح');
-                areaEditorModal.style.display = 'none';
-            }
-        };
+                    document.getElementById('addArea').onclick = () => {
+                    const name = document.getElementById('areaName').value.trim();
+                    const desc = document.getElementById('areaDescription').value.trim();
+                    const x = document.getElementById('areaCoordX').value;
+                    const y = document.getElementById('areaCoordY').value;
+                    if (!name) return showToast('يرجى إدخال اسم المنطقة', 'danger');
 
-        const employeeEditorModal = document.getElementById('employeeEditorModal');
-        const employeeEditorName = document.getElementById('employeeEditorName');
-        const employeeEditorPhone = document.getElementById('employeeEditorPhone');
-        const employeeEditorId = document.getElementById('employeeEditorId');
+                    const newArea = {
+                    id: Date.now(),
+                    name,
+                    description: desc,
+                    lat: y ? parseFloat(y) : null,
+                    lng: x ? parseFloat(x) : null,
+                    geojson: window.drawnGeoJSON || null
+                    };
 
-        window.openEmployeeEditor = (id) => {
-            const emp = employees.find(e => e.id === id);
-            if (!emp) return;
-            employeeEditorId.value = emp.id;
-            employeeEditorName.value = emp.name;
-            employeeEditorPhone.value = emp.phone;
-            employeeEditorModal.style.display = 'flex';
-        };
+                    areas.push(newArea);
+                    document.getElementById('areaName').value = '';
+                    document.getElementById('areaDescription').value = '';
+                    document.getElementById('areaCoordX').value = '';
+                    document.getElementById('areaCoordY').value = '';
+                    window.drawnGeoJSON = null;
+                    persistAll();
+                    updateUI();
+                    showToast('تم إضافة المنطقة بنجاح');
+                    };
 
-        document.getElementById('closeEmployeeEditorModal').onclick = () => {
-            employeeEditorModal.style.display = 'none';
-        };
+                    document.getElementById('addSchedule').onclick = () => {
+                    const areaId = Number(document.getElementById('scheduleArea').value);
+                    const empId = Number(document.getElementById('scheduleEmployee').value);
+                    if (!areaId || !empId) return showToast('يرجى اختيار المنطقة والموظف', 'danger');
 
-        document.getElementById('saveEmployeeEditBtn').onclick = () => {
-            const id = Number(employeeEditorId.value);
-            const name = employeeEditorName.value.trim();
-            const phone = employeeEditorPhone.value.trim();
+                    schedules.push({
+                    id: Date.now(),
+                    areaId,
+                    employeeId: empId,
+                    date: '',
+                    startTime: '',
+                    duration: 4,
+                    status: 'pending'
+                    });
 
-            if (!name || !phone) return showToast('يرجى ملء جميع الحقول', 'danger');
+                    persistAll();
+                    updateUI();
+                    showToast('تم تعيين المنطقة للموظف بنجاح');
+                    };
 
-            const index = employees.findIndex(e => e.id === id);
+                    document.getElementById('openDrawAreaBtn').onclick = () => {
+                    const drawWindow = window.open('draw_map.html', 'drawMap', 'width=1200,height=800');
+                    if (drawWindow) {
+                    showToast('تم فتح نافذة الرسم');
+                    } else {
+                    showToast('فشل فتح نافذة الرسم. يرجى السماح بالنوافذ المنبثقة', 'danger');
+                    }
+                    };
 
-            if (index !== -1) {
-                employees[index].name = name;
-                employees[index].phone = phone;
-                persistAll();
-                updateUI();
-                showToast('تم تحديث بيانات الموظف');
-                employeeEditorModal.style.display = 'none';
-            }
-        };
+                    function showToast(msg, type = 'success') {
+                    const toast = document.createElement('div');
+                    toast.className = 'notification-toast';
+                    toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--success)';
+                    toast.textContent = msg;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                    }
 
-        document.getElementById('deleteEmployeeBtn').onclick = () => {
-            const id = Number(employeeEditorId.value);
+                    window.deleteEmployee = (id) => {
+                    if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
+                    employees = employees.filter(e => e.id !== id);
+                    persistAll();
+                    updateUI();
+                    }
+                    };
 
-            if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
-                employees = employees.filter(e => e.id !== id);
-                persistAll();
-                updateUI();
-                showToast('تم حذف الموظف');
-                employeeEditorModal.style.display = 'none';
-            }
-        };
+                    window.deleteSchedule = (id) => {
+                    if (confirm('هل أنت متأكد من حذف هذا الجدول؟')) {
+                    schedules = schedules.filter(s => s.id !== id);
+                    persistAll();
+                    updateUI();
+                    }
+                    };
 
-        function attachNotificationHandlers() {
-            const headerBtn = document.getElementById('headerBroadcastBtn');
-            const modal = document.getElementById('notificationModal');
-            const close = document.getElementById('closeNotificationModal');
-            const select = document.getElementById('notifyScheduleSelect');
-            const msg = document.getElementById('notificationMessage');
-            const send = document.getElementById('confirmSend');
-            const tabs = document.querySelectorAll('.nc-tab');
-            const typeRadios = document.querySelectorAll('input[name="notifType"]');
+                    window.editAreaCard = (areaId) => {
+                    const area = areas.find(a => a.id === areaId);
+                    if (!area) return;
 
-            const openModal = () => {
-                modal.style.display = 'flex';
-                populateNotificationSchedules();
-                populateNotificationHistory();
-            };
+                    document.getElementById('scheduleArea').value = areaId;
+                    areaEditorSelect.innerHTML = '<option value="">اختر المنطقة لتعديلها</option>';
+                    areas.forEach(a => {
+                    const opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = a.name;
+                    if (a.id === areaId) opt.selected = true;
+                    areaEditorSelect.appendChild(opt);
+                    });
 
-            if (headerBtn) headerBtn.onclick = openModal;
-            if (close) close.onclick = () => modal.style.display = 'none';
+                    areaEditorName.value = area.name;
+                    areaEditorDesc.value = area.description || '';
+                    populateAreaEditorEmployees(areaId);
+                    areaEditorModal.style.display = 'flex';
+                    };
 
-            tabs.forEach(tab => {
-                tab.onclick = () => {
+                    window.deleteAreaCard = (areaId) => {
+                    const area = areas.find(a => a.id === areaId);
+                    if (!area) return;
+
+                    if (confirm(`هل أنت متأكد من حذف منطقة "${area.name}" ؟ سيتم حذف جميع التعيينات المرتبطة بها.`)) {
+                    areas = areas.filter(a => a.id !== areaId);
+                    schedules = schedules.filter(s => s.areaId !== areaId);
+                    persistAll();
+                    updateUI();
+                    showToast('تم حذف المنطقة بنجاح');
+                    }
+                    };
+
+                    window.updateCoordinates = (lat, lng, geojson) => {
+                    document.getElementById('areaCoordX').value = lng;
+                    document.getElementById('areaCoordY').value = lat;
+                    window.drawnGeoJSON = geojson;
+                    showToast('تم استلام الإحداثيات من الخريطة');
+                    };
+
+                    const areaEditorModal = document.getElementById('areaEditorModal');
+                    const areaEditorSelect = document.getElementById('areaEditorSelect');
+                    const areaEditorName = document.getElementById('areaEditorName');
+                    const areaEditorDesc = document.getElementById('areaEditorDesc');
+                    const areaEditorEmployee = document.getElementById('areaEditorEmployee');
+
+                    function populateAreaEditorEmployees(areaId) {
+                    areaEditorEmployee.innerHTML = '<option value="">اختر الموظف</option>';
+                    const assignedSchedule = schedules.find(s => s.areaId === areaId);
+                    const assignedEmployeeId = assignedSchedule ? assignedSchedule.employeeId : null;
+
+                    employees.forEach(emp => {
+                    const opt = document.createElement('option');
+                    opt.value = emp.id;
+                    opt.textContent = emp.name;
+                    if (emp.id === assignedEmployeeId) {
+                    opt.selected = true;
+                    }
+                    areaEditorEmployee.appendChild(opt);
+                    });
+                    }
+
+                    document.getElementById('openAreaEditorBtn').onclick = () => {
+                    const selectedAreaId = document.getElementById('scheduleArea').value;
+                    if (!selectedAreaId) return showToast('يرجى اختيار منطقة أولاً', 'danger');
+
+                    areaEditorSelect.innerHTML = '<option value="">اختر المنطقة لتعديلها</option>';
+                    areas.forEach(a => {
+                    const opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = a.name;
+                    if (a.id == selectedAreaId) opt.selected = true;
+                    areaEditorSelect.appendChild(opt);
+                    });
+
+                    const area = areas.find(a => a.id == selectedAreaId);
+                    if (area) {
+                    areaEditorName.value = area.name;
+                    areaEditorDesc.value = area.description || '';
+                    populateAreaEditorEmployees(Number(selectedAreaId));
+                    }
+                    areaEditorModal.style.display = 'flex';
+                    };
+
+                    document.getElementById('closeAreaEditorModal').onclick = () => {
+                    areaEditorModal.style.display = 'none';
+                    };
+
+                    window.onclick = (event) => {
+                    if (event.target == areaEditorModal) {
+                    areaEditorModal.style.display = 'none';
+                    }
+                    if (event.target == employeeEditorModal) {
+                    employeeEditorModal.style.display = 'none';
+                    }
+                    if (event.target == logoutModal) {
+                    logoutModal.style.display = 'none';
+                    }
+                    if (event.target == document.getElementById('notificationModal')) {
+                    document.getElementById('notificationModal').style.display = 'none';
+                    }
+                    };
+
+                    areaEditorSelect.onchange = () => {
+                    const id = areaEditorSelect.value;
+                    if (!id) return;
+                    const area = areas.find(a => a.id == id);
+
+                    if (area) {
+                    areaEditorName.value = area.name;
+                    areaEditorDesc.value = area.description || '';
+                    populateAreaEditorEmployees(Number(id));
+                    }
+                    };
+
+                    document.getElementById('saveAreaEditBtn').onclick = () => {
+                    const id = areaEditorSelect.value;
+                    if (!id) return showToast('يرجى اختيار منطقة', 'danger');
+
+                    const name = areaEditorName.value.trim();
+                    const desc = areaEditorDesc.value.trim();
+                    const selectedEmployeeId = Number(areaEditorEmployee.value);
+
+                    if (!name) return showToast('يرجى إدخال اسم المنطقة', 'danger');
+
+                    const areaIndex = areas.findIndex(a => a.id == id);
+
+                    if (areaIndex !== -1) {
+                    areas[areaIndex].name = name;
+                    areas[areaIndex].description = desc;
+
+                    schedules = schedules.filter(s => s.areaId != id);
+
+                    if (selectedEmployeeId) {
+                    schedules.push({
+                    id: Date.now(),
+                    areaId: Number(id),
+                    employeeId: selectedEmployeeId,
+                    date: '',
+                    startTime: '',
+                    duration: 4,
+                    status: 'pending'
+                    });
+                    }
+
+                    persistAll();
+                    updateUI();
+                    showToast('تم تحديث المنطقة بنجاح');
+                    areaEditorModal.style.display = 'none';
+                    }
+                    };
+
+                    document.getElementById('deleteAreaBtn').onclick = () => {
+                    const id = areaEditorSelect.value;
+                    if (!id) return showToast('يرجى اختيار منطقة', 'danger');
+
+                    if (confirm('هل أنت متأكد من حذف هذه المنطقة؟ سيتم حذف جميع الجداول المرتبطة بها.')) {
+                    areas = areas.filter(a => a.id != id);
+                    schedules = schedules.filter(s => s.areaId != id);
+                    persistAll();
+                    updateUI();
+                    showToast('تم حذف المنطقة بنجاح');
+                    areaEditorModal.style.display = 'none';
+                    }
+                    };
+
+                    const employeeEditorModal = document.getElementById('employeeEditorModal');
+                    const employeeEditorName = document.getElementById('employeeEditorName');
+                    const employeeEditorPhone = document.getElementById('employeeEditorPhone');
+                    const employeeEditorId = document.getElementById('employeeEditorId');
+
+                    window.openEmployeeEditor = (id) => {
+                    const emp = employees.find(e => e.id === id);
+                    if (!emp) return;
+                    employeeEditorId.value = emp.id;
+                    employeeEditorName.value = emp.name;
+                    employeeEditorPhone.value = emp.phone;
+                    employeeEditorModal.style.display = 'flex';
+                    };
+
+                    document.getElementById('closeEmployeeEditorModal').onclick = () => {
+                    employeeEditorModal.style.display = 'none';
+                    };
+
+                    document.getElementById('saveEmployeeEditBtn').onclick = () => {
+                    const id = Number(employeeEditorId.value);
+                    const name = employeeEditorName.value.trim();
+                    const phone = employeeEditorPhone.value.trim();
+
+                    if (!name || !phone) return showToast('يرجى ملء جميع الحقول', 'danger');
+
+                    const index = employees.findIndex(e => e.id === id);
+
+                    if (index !== -1) {
+                    employees[index].name = name;
+                    employees[index].phone = phone;
+                    persistAll();
+                    updateUI();
+                    showToast('تم تحديث بيانات الموظف');
+                    employeeEditorModal.style.display = 'none';
+                    }
+                    };
+
+                    document.getElementById('deleteEmployeeBtn').onclick = () => {
+                    const id = Number(employeeEditorId.value);
+
+                    if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
+                    employees = employees.filter(e => e.id !== id);
+                    persistAll();
+                    updateUI();
+                    showToast('تم حذف الموظف');
+                    employeeEditorModal.style.display = 'none';
+                    }
+                    };
+
+                    function attachNotificationHandlers() {
+                    const headerBtn = document.getElementById('headerBroadcastBtn');
+                    const modal = document.getElementById('notificationModal');
+                    const close = document.getElementById('closeNotificationModal');
+                    const select = document.getElementById('notifyScheduleSelect');
+                    const msg = document.getElementById('notificationMessage');
+                    const send = document.getElementById('confirmSend');
+                    const tabs = document.querySelectorAll('.nc-tab');
+                    const typeRadios = document.querySelectorAll('input[name="notifType"]');
+
+                    const openModal = () => {
+                    modal.style.display = 'flex';
+                    populateNotificationSchedules();
+                    populateNotificationHistory();
+                    };
+
+                    if (headerBtn) headerBtn.onclick = openModal;
+                    if (close) close.onclick = () => modal.style.display = 'none';
+
+                    tabs.forEach(tab => {
+                    tab.onclick = () => {
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
 
                     if (tab.dataset.tab === 'new') {
-                        document.getElementById('ncTabNew').style.display = 'block';
-                        document.getElementById('ncTabHistory').style.display = 'none';
+                    document.getElementById('ncTabNew').style.display = 'block';
+                    document.getElementById('ncTabHistory').style.display = 'none';
                     } else {
-                        document.getElementById('ncTabNew').style.display = 'none';
-                        document.getElementById('ncTabHistory').style.display = 'block';
-                        populateNotificationHistory();
+                    document.getElementById('ncTabNew').style.display = 'none';
+                    document.getElementById('ncTabHistory').style.display = 'block';
+                    populateNotificationHistory();
                     }
-                };
-            });
+                    };
+                    });
 
-            const updateMessage = () => {
-                const scheduleId = Number(select.value);
-                const schedule = schedules.find(s => s.id === scheduleId);
-                const type = document.querySelector('input[name="notifType"]:checked').value;
+                    const updateMessage = () => {
+                    const scheduleId = Number(select.value);
+                    const schedule = schedules.find(s => s.id === scheduleId);
+                    const type = document.querySelector('input[name="notifType"]:checked').value;
 
-                document.querySelectorAll('.notif-type-card').forEach(c => c.classList.remove('selected'));
-                if (type === 'start') document.getElementById('typeStartCard').classList.add('selected');
-                else if (type === 'end') document.getElementById('typeEndCard').classList.add('selected');
-                else if (type === 'emergency')
+                    document.querySelectorAll('.notif-type-card').forEach(c => c.classList.remove('selected'));
+                    if (type === 'start') document.getElementById('typeStartCard').classList.add('selected');
+                    else if (type === 'end') document.getElementById('typeEndCard').classList.add('selected');
+                    else if (type === 'emergency')
                     document.getElementById('typeEmergencyCard').classList.add('selected');
 
-                if (schedule) {
+                    if (schedule) {
                     const area = areas.find(a => a.id === schedule.areaId);
 
                     if (area) {
-                        if (type === 'start') {
-                            // Convert 24h time to 12h time
-                            let timeDisplay = schedule.startTime || 'الآن';
-                            if (timeDisplay !== 'الآن') {
-                                try {
-                                    const [hours, minutes] = timeDisplay.split(':');
-                                    const date = new Date();
-                                    date.setHours(hours);
-                                    date.setMinutes(minutes);
-                                    timeDisplay = date.toLocaleTimeString('en-US', {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        hour12: true
-                                    });
-                                } catch (e) { }
-                            }
-                            msg.value = `تنويه: بدء توزيع المياه في ${area.name}\n\nوقت البدء: ${timeDisplay}\n\nمدة التجهيز:
-            ${schedule.duration} ساعة`;
-                        } else if (type === 'end') {
-                            msg.value = `تنويه: انتهاء توزيع المياه في ${area.name}\n\nشكراً لتعاونكم.`;
-                        } else {
-                            msg.value = `تنويه هام: توقف ضخ المياه في ${area.name}\n\nبسبب أعمال صيانة طارئة.\nنعتذر عن
-            الإزعاج.`;
-                        }
+                    if (type === 'start') {
+                    // Convert 24h time to 12h time
+                    let timeDisplay = schedule.startTime || 'الآن';
+                    if (timeDisplay !== 'الآن') {
+                    try {
+                    const [hours, minutes] = timeDisplay.split(':');
+                    const date = new Date();
+                    date.setHours(hours);
+                    date.setMinutes(minutes);
+                    timeDisplay = date.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                    });
+                    } catch (e) { }
                     }
-                } else {
-                    if (type === 'emergency') {
-                        msg.value = `تنويه هام: توقف ضخ المياه بسبب أعمال صيانة طارئة أو انقطاع التيار الكهربائي.\nنعتذر عن
-            الإزعاج.`;
+                    msg.value = `تنويه: بدء توزيع المياه في ${area.name}\n\nوقت البدء: ${timeDisplay}\n\nمدة التجهيز:
+                    ${schedule.duration} ساعة`;
+                    } else if (type === 'end') {
+                    msg.value = `تنويه: انتهاء توزيع المياه في ${area.name}\n\nشكراً لتعاونكم.`;
                     } else {
-                        msg.value = '';
+                    msg.value = `تنويه هام: توقف ضخ المياه في ${area.name}\n\nبسبب أعمال صيانة طارئة.\nنعتذر عن
+                    الإزعاج.`;
                     }
-                }
-            };
+                    }
+                    } else {
+                    if (type === 'emergency') {
+                    msg.value = `تنويه هام: توقف ضخ المياه بسبب أعمال صيانة طارئة أو انقطاع التيار الكهربائي.\nنعتذر عن
+                    الإزعاج.`;
+                    } else {
+                    msg.value = '';
+                    }
+                    }
+                    };
 
-            if (select) select.onchange = updateMessage;
-            typeRadios.forEach(radio => radio.onchange = updateMessage);
+                    if (select) select.onchange = updateMessage;
+                    typeRadios.forEach(radio => radio.onchange = updateMessage);
 
-            if (send) send.onclick = async () => {
-                if (!msg.value.trim()) {
+                    if (send) send.onclick = async () => {
+                    if (!msg.value.trim()) {
                     showToast('الرجاء إدخال نص الإشعار', 'danger');
                     return;
-                }
+                    }
 
-                const durationHours = Number(document.getElementById('notificationDuration').value) || 24;
-                const expiresAt = Date.now() + (durationHours * 60 * 60 * 1000);
+                    const durationHours = Number(document.getElementById('notificationDuration').value) || 24;
+                    const expiresAt = Date.now() + (durationHours * 60 * 60 * 1000);
 
-                const notification = {
+                    const notification = {
                     id: Date.now(),
                     message: msg.value,
                     timestamp: new Date().getTime(),
                     expiresAt: expiresAt
-                };
+                    };
 
-                // 1. Save locally first
-                try {
+                    // 1. Save locally first
+                    try {
                     const raw = localStorage.getItem('waterNotifications');
                     const notifs = raw ? JSON.parse(raw) : [];
                     notifs.push(notification);
@@ -1433,170 +1325,170 @@
 
                     modal.style.display = 'none';
                     msg.value = '';
-                } catch (e) {
+                    } catch (e) {
                     console.error("Local save error:", e);
                     showToast('حدث خطأ في الحفظ المحلي', 'danger');
                     return;
-                }
+                    }
 
-                // 2. Try network broadcast in background
-                if (typeof broadcastNotification === 'function') {
+                    // 2. Try network broadcast in background
+                    if (typeof broadcastNotification === 'function') {
                     broadcastNotification(notification).then(() => {
-                        console.log("Broadcast success");
-                        showToast('تم تعميم الإشعار بنجاح');
+                    console.log("Broadcast success");
+                    showToast('تم تعميم الإشعار بنجاح');
                     }).catch(err => {
-                        console.error("Broadcast failed:", err);
-                        showToast('تم الحفظ محلياً فقط (فشل الاتصال)', 'warning');
+                    console.error("Broadcast failed:", err);
+                    showToast('تم الحفظ محلياً فقط (فشل الاتصال)', 'warning');
                     });
-                }
+                    }
 
-                if (window.opener && window.opener.checkForNotifications) {
+                    if (window.opener && window.opener.checkForNotifications) {
                     try {
-                        window.opener.checkForNotifications();
+                    window.opener.checkForNotifications();
                     } catch (e) { }
-                }
-            };
+                    }
+                    };
 
-            window.addEventListener('click', (e) => {
-                if (e.target === modal) {
+                    window.addEventListener('click', (e) => {
+                    if (e.target === modal) {
                     modal.style.display = 'none';
-                }
-            });
-        }
+                    }
+                    });
+                    }
 
-        function populateNotificationSchedules() {
-            const select = document.getElementById('notifyScheduleSelect');
-            select.innerHTML = '<option value="">-- اختر منطقة التوزيع --</option>';
+                    function populateNotificationSchedules() {
+                    const select = document.getElementById('notifyScheduleSelect');
+                    select.innerHTML = '<option value="">-- اختر منطقة التوزيع --</option>';
 
-            schedules.forEach(sch => {
-                const area = areas.find(a => a.id === sch.areaId);
-                const emp = employees.find(e => e.id === sch.employeeId);
+                    schedules.forEach(sch => {
+                    const area = areas.find(a => a.id === sch.areaId);
+                    const emp = employees.find(e => e.id === sch.employeeId);
 
-                if (area) {
+                    if (area) {
                     const opt = document.createElement('option');
                     opt.value = sch.id;
                     opt.textContent = `${area.name} - ${sch.date || ''} (${emp ? emp.name : 'غير محدد'})`;
                     select.appendChild(opt);
-                }
-            });
-        }
+                    }
+                    });
+                    }
 
-        function populateNotificationHistory() {
-            const list = document.getElementById('notificationHistoryList');
-            const raw = localStorage.getItem('waterNotifications');
-            let notifs = raw ? JSON.parse(raw) : [];
+                    function populateNotificationHistory() {
+                    const list = document.getElementById('notificationHistoryList');
+                    const raw = localStorage.getItem('waterNotifications');
+                    let notifs = raw ? JSON.parse(raw) : [];
 
-            const now = Date.now();
-            const validNotifs = notifs.filter(n => !n.expiresAt || n.expiresAt > now);
+                    const now = Date.now();
+                    const validNotifs = notifs.filter(n => !n.expiresAt || n.expiresAt > now);
 
-            if (validNotifs.length !== notifs.length) {
-                localStorage.setItem('waterNotifications', JSON.stringify(validNotifs));
-                notifs = validNotifs;
-            }
+                    if (validNotifs.length !== notifs.length) {
+                    localStorage.setItem('waterNotifications', JSON.stringify(validNotifs));
+                    notifs = validNotifs;
+                    }
 
-            if (notifs.length === 0) {
-                list.innerHTML = '<p style="text-align:center;color:#999;">لا يوجد سجل إشعارات</p>';
-                return;
-            }
+                    if (notifs.length === 0) {
+                    list.innerHTML = '<p style="text-align:center;color:#999;">لا يوجد سجل إشعارات</p>';
+                    return;
+                    }
 
-            list.innerHTML = '';
+                    list.innerHTML = '';
 
-            notifs.slice().reverse().forEach(n => {
-                // Force Gregorian date and 12-hour time
-                const dateObj = new Date(n.timestamp);
-                const dateStr = dateObj.toLocaleDateString('en-GB'); // DD/MM/YYYY
-                const timeStr = dateObj.toLocaleTimeString('en-US', {
+                    notifs.slice().reverse().forEach(n => {
+                    // Force Gregorian date and 12-hour time
+                    const dateObj = new Date(n.timestamp);
+                    const dateStr = dateObj.toLocaleDateString('en-GB'); // DD/MM/YYYY
+                    const timeStr = dateObj.toLocaleTimeString('en-US', {
                     hour: 'numeric',
                     minute: '2-digit',
                     hour12: true
-                });
-                const date = `${dateStr} ${timeStr}`;
+                    });
+                    const date = `${dateStr} ${timeStr}`;
 
-                let expiryText = '';
+                    let expiryText = '';
 
-                if (n.expiresAt) {
+                    if (n.expiresAt) {
                     const expObj = new Date(n.expiresAt);
                     const expDateStr = expObj.toLocaleDateString('en-GB');
                     const expTimeStr = expObj.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
                     });
                     expiryText = `<div style="font-size:0.75rem;color:#94a3b8;margin-top:5px;"><i
-                    class="fas fa-hourglass-end"></i>
-                ينتهي في: ${expDateStr} ${expTimeStr}</div>`;
-                }
+                            class="fas fa-hourglass-end"></i>
+                        ينتهي في: ${expDateStr} ${expTimeStr}</div>`;
+                    }
 
-                const item = document.createElement('div');
-                item.className = 'nc-history-item';
+                    const item = document.createElement('div');
+                    item.className = 'nc-history-item';
 
-                item.innerHTML = `<div class="nc-history-header"
-                style="display:flex;justify-content:space-between;align-items:center;">
-                <span><i class="far fa-clock"></i> ${date}</span>
-                <button onclick="deleteNotification(${n.id})" class="btn-delete-notif" title="حذف الإشعار">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </div>
-            <div class="nc-history-body">
-                ${n.message}
-                ${expiryText}
-            </div>`;
-                list.appendChild(item);
-            });
-        }
+                    item.innerHTML = `<div class="nc-history-header"
+                        style="display:flex;justify-content:space-between;align-items:center;">
+                        <span><i class="far fa-clock"></i> ${date}</span>
+                        <button onclick="deleteNotification(${n.id})" class="btn-delete-notif" title="حذف الإشعار">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    <div class="nc-history-body">
+                        ${n.message}
+                        ${expiryText}
+                    </div>`;
+                    list.appendChild(item);
+                    });
+                    }
 
-        window.deleteNotification = function (id) {
-            if (!confirm('هل أنت متأكد من حذف هذا الإشعار؟')) return;
+                    window.deleteNotification = function (id) {
+                    if (!confirm('هل أنت متأكد من حذف هذا الإشعار؟')) return;
 
-            const raw = localStorage.getItem('waterNotifications');
-            let notifs = raw ? JSON.parse(raw) : [];
-            notifs = notifs.filter(n => n.id !== id);
-            localStorage.setItem('waterNotifications', JSON.stringify(notifs));
+                    const raw = localStorage.getItem('waterNotifications');
+                    let notifs = raw ? JSON.parse(raw) : [];
+                    notifs = notifs.filter(n => n.id !== id);
+                    localStorage.setItem('waterNotifications', JSON.stringify(notifs));
 
-            populateNotificationHistory();
-            showToast('تم حذف الإشعار بنجاح');
-        };
+                    populateNotificationHistory();
+                    showToast('تم حذف الإشعار بنجاح');
+                    };
 
-        // Logout Logic
-        const logoutModal = document.getElementById('logoutModal');
-        const managerBackBtn = document.getElementById('managerBackBtn');
-        const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
-        const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+                    // Logout Logic
+                    const logoutModal = document.getElementById('logoutModal');
+                    const managerBackBtn = document.getElementById('managerBackBtn');
+                    const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+                    const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
 
-        if (managerBackBtn) {
-            managerBackBtn.addEventListener('click', () => {
-                logoutModal.style.display = 'flex';
-            });
-        }
+                    if (managerBackBtn) {
+                    managerBackBtn.addEventListener('click', () => {
+                    logoutModal.style.display = 'flex';
+                    });
+                    }
 
-        if (cancelLogoutBtn) {
-            cancelLogoutBtn.addEventListener('click', () => {
-                logoutModal.style.display = 'none';
-            });
-        }
+                    if (cancelLogoutBtn) {
+                    cancelLogoutBtn.addEventListener('click', () => {
+                    logoutModal.style.display = 'none';
+                    });
+                    }
 
-        if (confirmLogoutBtn) {
-            confirmLogoutBtn.addEventListener('click', () => {
-                if (window.opener) {
+                    if (confirmLogoutBtn) {
+                    confirmLogoutBtn.addEventListener('click', () => {
+                    if (window.opener) {
                     window.close();
-                } else {
+                    } else {
                     window.location.href = 'index.html';
-                }
-            });
-        }
+                    }
+                    });
+                    }
 
-        window.addEventListener('click', (e) => {
-            if (e.target === logoutModal) {
-                logoutModal.style.display = 'none';
-            }
-        });
+                    window.addEventListener('click', (e) => {
+                    if (e.target === logoutModal) {
+                    logoutModal.style.display = 'none';
+                    }
+                    });
 
-        document.getElementById('employeeSearch').addEventListener('input', updateEmployeeList);
+                    document.getElementById('employeeSearch').addEventListener('input', updateEmployeeList);
 
-        loadData(); // Render initial state from local storage
-        startRealtimeSync(updateUI); // Start listening for updates
-        attachNotificationHandlers();
-    </script>
+                    loadData(); // Render initial state from local storage
+                    startRealtimeSync(updateUI); // Start listening for updates
+                    attachNotificationHandlers();
+                    </script>
 </body>
 
 </html>

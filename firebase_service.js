@@ -131,16 +131,32 @@ function startRealtimeSync(updateUICallback) {
     initFirebase();
 
     subscribeToCollection('areas', (data) => {
+        if (data.length === 0 && window.areas.length > 0) {
+            console.warn("Remote areas empty, keeping local data and syncing up.");
+            saveItem('areas', { id: 'init_check', _temp: true }).then(() => deleteItem('areas', 'init_check')); // Dummy write check? No, just save all.
+            saveAllData(window.areas, window.employees, window.schedules);
+            return;
+        }
         window.areas = data;
         if (updateUICallback) updateUICallback();
     });
 
     subscribeToCollection('employees', (data) => {
+        if (data.length === 0 && window.employees.length > 0) {
+            console.warn("Remote employees empty, keeping local data.");
+            saveAllData(window.areas, window.employees, window.schedules);
+            return;
+        }
         window.employees = data;
         if (updateUICallback) updateUICallback();
     });
 
     subscribeToCollection('schedules', (data) => {
+        if (data.length === 0 && window.schedules.length > 0) {
+            console.warn("Remote schedules empty, keeping local data.");
+            saveAllData(window.areas, window.employees, window.schedules);
+            return;
+        }
         window.schedules = data;
         if (updateUICallback) updateUICallback();
     });
