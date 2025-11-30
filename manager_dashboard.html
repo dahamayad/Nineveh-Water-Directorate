@@ -1,872 +1,856 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم المدير</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <style>
-        /* Copied and adapted styles from index.html */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #4facfe;
-            --secondary: #00f2fe;
-            --accent: #ff0080;
-            --dark-bg: #0f172a;
-            /* Solid background for popup */
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text-main: #ffffff;
-            --text-muted: #94a3b8;
-            --success: #00e676;
-            --warning: #ffea00;
-            --danger: #ff1744;
-        }
-
-        body {
-            font-family: 'Segoe UI', 'Roboto', sans-serif;
-            background-color: var(--dark-bg);
-            color: var(--text-main);
-            height: 100vh;
-            overflow-y: auto;
-            direction: rtl;
-            padding: 20px;
-        }
-
-        /* Responsive Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0;
-            width: 100%;
-        }
-
-        /* Header Styles */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        header h1 {
-            font-size: 1.5rem;
-            margin: 0;
-        }
-
-        .user-info {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        /* Form Styles */
-        .controls h3,
-        .schedules-list h4 {
-            color: var(--secondary);
-            margin-bottom: 15px;
-            font-size: 1.1rem;
-            border-bottom: 1px solid var(--glass-border);
-            padding-bottom: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            font-size: 0.9rem;
-            display: block;
-            font-weight: 600;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            color: white;
-            border-radius: 8px;
-            padding: 12px;
-            width: 100%;
-            font-size: 14px;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        select option {
-            background-color: #1e293b;
-            color: white;
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            width: 100%;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            color: white;
-            transition: transform 0.2s, opacity 0.2s;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), #2980b9);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success), #00b894);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger), #ff5252);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--glass-border);
-        }
-
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 0.85rem;
-            width: auto;
-            margin-bottom: 0;
-        }
-
-        /* Stats */
-        .quick-stats {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-            flex-wrap: wrap;
-        }
-
-        .stat-item {
-            flex: 1;
-            min-width: 100px;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 15px;
-            border-radius: 10px;
-        }
-
-        .stat-number {
-            display: block;
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: var(--primary);
-            margin-bottom: 5px;
-        }
-
-        /* Lists */
-        .schedule-item {
-            background: linear-gradient(135deg, rgba(79, 172, 254, 0.1), rgba(0, 242, 254, 0.05));
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 12px;
-            border-right: 4px solid var(--primary);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .schedule-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(79, 172, 254, 0.2);
-        }
-
-        .schedule-item.completed {
-            border-right-color: var(--success);
-        }
-
-        .schedule-item.in-progress {
-            border-right-color: var(--warning);
-        }
-
-        .schedule-item.pending {
-            border-right-color: var(--danger);
-        }
-
-        /* Toast */
-        .notification-toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--success);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 5px;
-            z-index: 4000;
-            animation: slideIn 0.3s ease;
-            max-width: 90%;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        /* Modals */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 2000;
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            background-color: #1e293b;
-            padding: 25px;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 520px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            position: relative;
-            border: 1px solid var(--glass-border);
-            color: white;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .close {
-            position: absolute;
-            left: 20px;
-            top: 15px;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            color: #999;
-            transition: color 0.3s;
-        }
-
-        .close:hover {
-            color: white;
-        }
-
-        /* Layout Classes */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            align-items: start;
-            margin-top: 30px;
-            margin-bottom: 30px;
-        }
-
-        .dashboard-content {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 20px;
-        }
-
-        .schedules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
-        }
-
-        /* Notification Bell */
-        .btn-bell {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--glass-border);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        .btn-bell:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.05);
-        }
-
-        /* Notification Modal Styles */
-        .notification-center {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .nc-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .nc-header h3 {
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--secondary);
-        }
-
-        .nc-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 5px;
-            border-radius: 10px;
-        }
-
-        .nc-tab {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s;
-            color: var(--text-muted);
-        }
-
-        .nc-tab.active {
-            background: var(--primary);
-            color: white;
-            font-weight: bold;
-        }
-
-        .notif-type-group {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .notif-type-card {
-            flex: 1;
-            min-width: 100px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 15px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .notif-type-card:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .notif-type-card input {
-            display: none;
-        }
-
-        .notif-type-card i {
-            font-size: 1.5rem;
-            color: var(--text-muted);
-        }
-
-        /* Specific styles for Start Distribution (Blue) */
-        #typeStartCard.selected {
-            background: rgba(79, 172, 254, 0.2);
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(79, 172, 254, 0.3);
-        }
-
-        #typeStartCard.selected i {
-            color: var(--primary);
-        }
-
-        /* Specific styles for End Distribution (Red) */
-        #typeEndCard.selected {
-            background: rgba(255, 23, 68, 0.2);
-            border-color: var(--danger);
-            box-shadow: 0 0 15px rgba(255, 23, 68, 0.3);
-        }
-
-        #typeEndCard.selected i {
-            color: var(--danger);
-        }
-
-        /* Specific styles for Emergency (Red/Orange) */
-        #typeEmergencyCard.selected {
-            background: rgba(255, 82, 82, 0.2);
-            border-color: var(--danger);
-            box-shadow: 0 0 15px rgba(255, 82, 82, 0.3);
-        }
-
-        .nc-history-item {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-right: 3px solid var(--text-muted);
-        }
-
-        .nc-history-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 5px;
-        }
-
-        .nc-history-body {
-            font-size: 0.95rem;
-            line-height: 1.4;
-        }
-
-        .btn-delete-notif {
-            background: #fee2e2;
-            color: #ef4444;
-            border: none;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 4px;
-        }
-
-        /* RESPONSIVE MEDIA QUERIES */
-        @media (max-width: 1024px) {
-            .form-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-                margin-top: 20px;
-            }
-
-            .dashboard-content {
-                grid-template-columns: 1fr;
-            }
-
-            .schedules-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .quick-stats {
-                gap: 10px;
-            }
-
-            .stat-item {
-                padding: 10px;
-            }
-
-            .stat-number {
-                font-size: 1.5rem;
-            }
-
-            h1 {
-                font-size: 1.2rem;
-            }
-
-            .controls h3,
-            .schedules-list h4 {
-                font-size: 1rem;
-            }
-
-            .modal-content {
-                padding: 20px;
-                width: 95%;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .user-info {
-                width: 100%;
-                justify-content: flex-end;
-                margin-top: 10px;
-            }
-
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .quick-stats {
-                flex-direction: row;
-                /* Keep stats in row but maybe wrap */
-            }
-
-            .stat-item {
-                min-width: 45%;
-                /* 2 per row on very small screens */
-            }
-        }
-    </style>
-    <!-- Firebase SDK (v8.10.1) -->
-    <div class="user-info">
-        <button id="headerBroadcastBtn" class="btn-bell" title="إرسال إشعار">
-            <i class="fas fa-bell"></i>
-        </button>
-        <button id="managerBackBtn" class="logout-btn btn btn-small btn-danger" style="margin:0; width:auto;">
-            <i class="fas fa-arrow-right"></i> رجوع
-        </button>
-    </div>
-    </header>
-
-    <div class="container">
-        <div class="quick-stats">
-            <div class="stat-item">
-                <span id="totalEmployees" class="stat-number">0</span>
-                <span>الموظفين</span>
-            </div>
-            <div class="stat-item">
-                <span id="totalAreas" class="stat-number">0</span>
-                <span>المناطق</span>
-            </div>
-            <div class="stat-item">
-                <span id="totalSchedules" class="stat-number">0</span>
-                <span>الجداول</span>
-            </div>
+:root {
+--primary: #4facfe;
+--secondary: #00f2fe;
+--accent: #ff0080;
+--dark-bg: #0f172a;
+/* Solid background for popup */
+--glass-border: rgba(255, 255, 255, 0.1);
+--text-main: #ffffff;
+--text-muted: #94a3b8;
+--success: #00e676;
+--warning: #ffea00;
+--danger: #ff1744;
+}
+
+body {
+font-family: 'Segoe UI', 'Roboto', sans-serif;
+background-color: var(--dark-bg);
+color: var(--text-main);
+height: 100vh;
+overflow-y: auto;
+direction: rtl;
+padding: 20px;
+}
+
+/* Responsive Container */
+.container {
+max-width: 1200px;
+margin: 0 auto;
+padding: 0;
+width: 100%;
+}
+
+/* Header Styles */
+header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 20px;
+flex-wrap: wrap;
+gap: 10px;
+}
+
+header h1 {
+font-size: 1.5rem;
+margin: 0;
+}
+
+.user-info {
+display: flex;
+gap: 10px;
+align-items: center;
+}
+
+/* Form Styles */
+.controls h3,
+.schedules-list h4 {
+color: var(--secondary);
+margin-bottom: 15px;
+font-size: 1.1rem;
+border-bottom: 1px solid var(--glass-border);
+padding-bottom: 10px;
+}
+
+.form-group {
+margin-bottom: 15px;
+}
+
+.form-group label {
+color: var(--text-muted);
+margin-bottom: 6px;
+font-size: 0.9rem;
+display: block;
+font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+background: rgba(255, 255, 255, 0.05);
+border: 1px solid var(--glass-border);
+color: white;
+border-radius: 8px;
+padding: 12px;
+width: 100%;
+font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+outline: none;
+border-color: var(--primary);
+background: rgba(255, 255, 255, 0.1);
+}
+
+select option {
+background-color: #1e293b;
+color: white;
+}
+
+/* Buttons */
+.btn {
+padding: 12px 20px;
+border: none;
+border-radius: 8px;
+cursor: pointer;
+font-size: 14px;
+font-weight: 600;
+width: 100%;
+margin-bottom: 10px;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+color: white;
+transition: transform 0.2s, opacity 0.2s;
+}
+
+.btn:active {
+transform: scale(0.98);
+}
+
+.btn:hover {
+opacity: 0.9;
+}
+
+.btn-primary {
+background: linear-gradient(135deg, var(--primary), #2980b9);
+}
+
+.btn-success {
+background: linear-gradient(135deg, var(--success), #00b894);
+}
+
+.btn-danger {
+background: linear-gradient(135deg, var(--danger), #ff5252);
+}
+
+.btn-secondary {
+background: rgba(255, 255, 255, 0.1);
+border: 1px solid var(--glass-border);
+}
+
+.btn-small {
+padding: 6px 12px;
+font-size: 0.85rem;
+width: auto;
+margin-bottom: 0;
+}
+
+/* Stats */
+.quick-stats {
+display: flex;
+gap: 15px;
+margin-top: 10px;
+padding-top: 15px;
+border-top: 1px solid #eee;
+flex-wrap: wrap;
+}
+
+.stat-item {
+flex: 1;
+min-width: 100px;
+text-align: center;
+background: rgba(255, 255, 255, 0.03);
+padding: 15px;
+border-radius: 10px;
+}
+
+.stat-number {
+display: block;
+font-size: 1.8rem;
+font-weight: bold;
+color: var(--primary);
+margin-bottom: 5px;
+}
+
+/* Lists */
+.schedule-item {
+background: linear-gradient(135deg, rgba(79, 172, 254, 0.1), rgba(0, 242, 254, 0.05));
+border: 1px solid var(--glass-border);
+border-radius: 12px;
+padding: 15px;
+margin-bottom: 12px;
+border-right: 4px solid var(--primary);
+transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.schedule-item:hover {
+transform: translateY(-2px);
+box-shadow: 0 8px 16px rgba(79, 172, 254, 0.2);
+}
+
+.schedule-item.completed {
+border-right-color: var(--success);
+}
+
+.schedule-item.in-progress {
+border-right-color: var(--warning);
+}
+
+.schedule-item.pending {
+border-right-color: var(--danger);
+}
+
+/* Toast */
+.notification-toast {
+position: fixed;
+top: 20px;
+right: 20px;
+background: var(--success);
+color: white;
+padding: 15px 25px;
+border-radius: 5px;
+z-index: 4000;
+animation: slideIn 0.3s ease;
+max-width: 90%;
+}
+
+@keyframes slideIn {
+from {
+transform: translateX(100%);
+opacity: 0;
+}
+
+to {
+transform: translateX(0);
+opacity: 1;
+}
+}
+
+/* Modals */
+.modal {
+display: none;
+position: fixed;
+inset: 0;
+background-color: rgba(0, 0, 0, 0.7);
+align-items: center;
+justify-content: center;
+padding: 20px;
+z-index: 2000;
+backdrop-filter: blur(5px);
+}
+
+.modal-content {
+background-color: #1e293b;
+padding: 25px;
+border-radius: 16px;
+width: 100%;
+max-width: 520px;
+box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+position: relative;
+border: 1px solid var(--glass-border);
+color: white;
+max-height: 90vh;
+overflow-y: auto;
+}
+
+.close {
+position: absolute;
+left: 20px;
+top: 15px;
+font-size: 28px;
+font-weight: bold;
+cursor: pointer;
+color: #999;
+transition: color 0.3s;
+}
+
+.close:hover {
+color: white;
+}
+
+/* Layout Classes */
+.form-grid {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 20px;
+align-items: start;
+margin-top: 30px;
+margin-bottom: 30px;
+}
+
+.dashboard-content {
+display: grid;
+grid-template-columns: 1fr 2fr;
+gap: 20px;
+}
+
+.schedules-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+gap: 15px;
+}
+
+/* Notification Bell */
+.btn-bell {
+width: 40px;
+height: 40px;
+border-radius: 50%;
+background: rgba(255, 255, 255, 0.1);
+border: 1px solid var(--glass-border);
+color: white;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+position: relative;
+transition: all 0.3s ease;
+}
+
+.btn-bell:hover {
+background: rgba(255, 255, 255, 0.2);
+transform: scale(1.05);
+}
+
+/* Notification Modal Styles */
+.notification-center {
+width: 100%;
+height: 100%;
+display: flex;
+flex-direction: column;
+}
+
+.nc-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 20px;
+padding-bottom: 15px;
+border-bottom: 1px solid var(--glass-border);
+}
+
+.nc-header h3 {
+margin: 0;
+display: flex;
+align-items: center;
+gap: 10px;
+color: var(--secondary);
+}
+
+.nc-tabs {
+display: flex;
+gap: 10px;
+margin-bottom: 20px;
+background: rgba(0, 0, 0, 0.2);
+padding: 5px;
+border-radius: 10px;
+}
+
+.nc-tab {
+flex: 1;
+text-align: center;
+padding: 10px;
+cursor: pointer;
+border-radius: 8px;
+transition: all 0.3s;
+color: var(--text-muted);
+}
+
+.nc-tab.active {
+background: var(--primary);
+color: white;
+font-weight: bold;
+}
+
+.notif-type-group {
+display: flex;
+gap: 15px;
+margin-bottom: 20px;
+flex-wrap: wrap;
+}
+
+.notif-type-card {
+flex: 1;
+min-width: 100px;
+background: rgba(255, 255, 255, 0.05);
+border: 1px solid var(--glass-border);
+border-radius: 12px;
+padding: 15px;
+cursor: pointer;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 10px;
+transition: all 0.3s;
+position: relative;
+overflow: hidden;
+}
+
+.notif-type-card:hover {
+background: rgba(255, 255, 255, 0.1);
+}
+
+.notif-type-card input {
+display: none;
+}
+
+.notif-type-card i {
+font-size: 1.5rem;
+color: var(--text-muted);
+}
+
+/* Specific styles for Start Distribution (Blue) */
+#typeStartCard.selected {
+background: rgba(79, 172, 254, 0.2);
+border-color: var(--primary);
+box-shadow: 0 0 15px rgba(79, 172, 254, 0.3);
+}
+
+#typeStartCard.selected i {
+color: var(--primary);
+}
+
+/* Specific styles for End Distribution (Red) */
+#typeEndCard.selected {
+background: rgba(255, 23, 68, 0.2);
+border-color: var(--danger);
+box-shadow: 0 0 15px rgba(255, 23, 68, 0.3);
+}
+
+#typeEndCard.selected i {
+color: var(--danger);
+}
+
+/* Specific styles for Emergency (Red/Orange) */
+#typeEmergencyCard.selected {
+background: rgba(255, 82, 82, 0.2);
+border-color: var(--danger);
+box-shadow: 0 0 15px rgba(255, 82, 82, 0.3);
+}
+
+.nc-history-item {
+background: rgba(255, 255, 255, 0.03);
+border-radius: 8px;
+padding: 12px;
+margin-bottom: 10px;
+border-right: 3px solid var(--text-muted);
+}
+
+.nc-history-header {
+display: flex;
+justify-content: space-between;
+font-size: 0.8rem;
+color: var(--text-muted);
+margin-bottom: 5px;
+}
+
+.nc-history-body {
+font-size: 0.95rem;
+line-height: 1.4;
+}
+
+.btn-delete-notif {
+background: #fee2e2;
+color: #ef4444;
+border: none;
+cursor: pointer;
+padding: 5px 10px;
+border-radius: 4px;
+}
+
+/* RESPONSIVE MEDIA QUERIES */
+@media (max-width: 1024px) {
+.form-grid {
+grid-template-columns: repeat(2, 1fr);
+}
+}
+
+@media (max-width: 768px) {
+body {
+padding: 10px;
+}
+
+.form-grid {
+grid-template-columns: 1fr;
+gap: 15px;
+margin-top: 20px;
+}
+
+.dashboard-content {
+grid-template-columns: 1fr;
+}
+
+.schedules-grid {
+grid-template-columns: 1fr;
+}
+
+.quick-stats {
+gap: 10px;
+}
+
+.stat-item {
+padding: 10px;
+}
+
+.stat-number {
+font-size: 1.5rem;
+}
+
+h1 {
+font-size: 1.2rem;
+}
+
+.controls h3,
+.schedules-list h4 {
+font-size: 1rem;
+}
+
+.modal-content {
+padding: 20px;
+width: 95%;
+}
+}
+
+@media (max-width: 480px) {
+.user-info {
+width: 100%;
+justify-content: flex-end;
+margin-top: 10px;
+}
+
+header {
+flex-direction: column;
+align-items: flex-start;
+}
+
+.quick-stats {
+flex-direction: row;
+/* Keep stats in row but maybe wrap */
+}
+
+.stat-item {
+min-width: 45%;
+/* 2 per row on very small screens */
+}
+}
+</style>
+<!-- Firebase SDK (v8.10.1) -->
+<div class="user-info">
+    <button id="headerBroadcastBtn" class="btn-bell" title="إرسال إشعار">
+        <i class="fas fa-bell"></i>
+    </button>
+    <button id="managerBackBtn" class="logout-btn btn btn-small btn-danger" style="margin:0; width:auto;">
+        <i class="fas fa-arrow-right"></i> رجوع
+    </button>
+</div>
+</header>
+
+<div class="container">
+    <div class="quick-stats">
+        <div class="stat-item">
+            <span id="totalEmployees" class="stat-number">0</span>
+            <span>الموظفين</span>
         </div>
-
-        <div class="form-grid">
-            <div class="controls">
-                <h3><i class="fas fa-user-plus"></i> إضافة موظف</h3>
-                <div class="form-group">
-                    <label>اسم الموظف</label>
-                    <input type="text" id="employeeName" placeholder="الاسم الكامل">
-                </div>
-                <div class="form-group">
-                    <label>رقم الهاتف</label>
-                    <input type="tel" id="employeePhone" placeholder="05xxxxxxxx">
-                </div>
-                <button id="addEmployee" class="btn btn-primary"><i class="fas fa-plus"></i> إضافة</button>
-            </div>
-
-            <div class="controls">
-                <h3><i class="fas fa-map-marker-alt"></i> إضافة منطقة</h3>
-                <div class="form-group">
-                    <label>اسم المنطقة</label>
-                    <input type="text" id="areaName" placeholder="مثال: حي الزهور">
-                </div>
-                <div class="form-group">
-                    <label>الوصف</label>
-                    <input type="text" id="areaDescription" placeholder="وصف مختصر">
-                </div>
-                <div class="form-group" style="display:flex; gap:10px;">
-                    <input type="text" id="areaCoordX" placeholder="X" readonly style="width:50%">
-                    <input type="text" id="areaCoordY" placeholder="Y" readonly style="width:50%">
-                </div>
-                <button id="openDrawAreaBtn" class="btn btn-secondary" style="margin-bottom:10px;"><i
-                        class="fas fa-map"></i> تحديد من الخريطة</button>
-                <button id="addArea" class="btn btn-primary"><i class="fas fa-plus"></i> إضافة المنطقة</button>
-            </div>
-
-            <div class="controls">
-                <h3><i class="fas fa-calendar-plus"></i> تعيين جدول</h3>
-                <div class="form-group">
-                    <label>المنطقة</label>
-                    <select id="scheduleArea">
-                        <option value="">اختر المنطقة</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>الموظف المسؤول</label>
-                    <select id="scheduleEmployee">
-                        <option value="">اختر الموظف</option>
-                    </select>
-                </div>
-                <button id="addSchedule" class="btn btn-success"><i class="fas fa-check"></i> تعيين</button>
-                <button id="openAreaEditorBtn" class="btn btn-secondary" style="margin-top:10px;"><i
-                        class="fas fa-edit"></i> تعديل المناطق</button>
-            </div>
+        <div class="stat-item">
+            <span id="totalAreas" class="stat-number">0</span>
+            <span>المناطق</span>
         </div>
-
-        <div class="dashboard-content">
-            <div class="schedules-list">
-                <h4><i class="fas fa-users"></i> قائمة الموظفين</h4>
-                <div class="form-group">
-                    <input type="text" id="employeeSearch" placeholder="بحث عن موظف...">
-                </div>
-                <div id="employeesContainer" style="max-height: 500px; overflow-y: auto;"></div>
-            </div>
-
-            <div class="schedules-list">
-                <h4><i class="fas fa-tasks"></i> جداول التوزيع الحالية</h4>
-                <div id="managerSchedulesContainer" class="schedules-grid"></div>
-            </div>
+        <div class="stat-item">
+            <span id="totalSchedules" class="stat-number">0</span>
+            <span>الجداول</span>
         </div>
     </div>
 
-    <div id="areaEditorModal" class="modal">
-        <div class="modal-content">
-            <span id="closeAreaEditorModal" class="close">&times;</span>
-            <h3>تعديل بيانات المنطقة</h3>
+    <div class="form-grid">
+        <div class="controls">
+            <h3><i class="fas fa-user-plus"></i> إضافة موظف</h3>
             <div class="form-group">
-                <label>اختر المنطقة</label>
-                <select id="areaEditorSelect"></select>
-            </div>
-            <div class="form-group">
-                <label>اسم المنطقة</label>
-                <input type="text" id="areaEditorName">
-            </div>
-            <div class="form-group">
-                <label>الوصف</label>
-                <textarea id="areaEditorDesc" rows="3"></textarea>
-            </div>
-            <div class="form-group">
-                <label>تغيير الموظف المسؤول</label>
-                <select id="areaEditorEmployee"></select>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button id="saveAreaEditBtn" class="btn btn-primary">حفظ التغييرات</button>
-                <button id="deleteAreaBtn" class="btn btn-danger">حذف المنطقة</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="employeeEditorModal" class="modal">
-        <div class="modal-content">
-            <span id="closeEmployeeEditorModal" class="close">&times;</span>
-            <h3>تعديل بيانات الموظف</h3>
-            <input type="hidden" id="employeeEditorId">
-            <div class="form-group">
-                <label>الاسم</label>
-                <input type="text" id="employeeEditorName">
+                <label>اسم الموظف</label>
+                <input type="text" id="employeeName" placeholder="الاسم الكامل">
             </div>
             <div class="form-group">
                 <label>رقم الهاتف</label>
-                <input type="text" id="employeeEditorPhone">
+                <input type="tel" id="employeePhone" placeholder="05xxxxxxxx">
             </div>
-            <div style="display:flex; gap:10px;">
-                <button id="saveEmployeeEditBtn" class="btn btn-primary">حفظ التغييرات</button>
-                <button id="deleteEmployeeBtn" class="btn btn-danger">حذف الموظف</button>
+            <button id="addEmployee" class="btn btn-primary"><i class="fas fa-plus"></i> إضافة</button>
+        </div>
+
+        <div class="controls">
+            <h3><i class="fas fa-map-marker-alt"></i> إضافة منطقة</h3>
+            <div class="form-group">
+                <label>اسم المنطقة</label>
+                <input type="text" id="areaName" placeholder="مثال: حي الزهور">
             </div>
+            <div class="form-group">
+                <label>الوصف</label>
+                <input type="text" id="areaDescription" placeholder="وصف مختصر">
+            </div>
+            <div class="form-group" style="display:flex; gap:10px;">
+                <input type="text" id="areaCoordX" placeholder="X" readonly style="width:50%">
+                <input type="text" id="areaCoordY" placeholder="Y" readonly style="width:50%">
+            </div>
+            <button id="openDrawAreaBtn" class="btn btn-secondary" style="margin-bottom:10px;"><i
+                    class="fas fa-map"></i> تحديد من الخريطة</button>
+            <button id="addArea" class="btn btn-primary"><i class="fas fa-plus"></i> إضافة المنطقة</button>
+        </div>
+
+        <div class="controls">
+            <h3><i class="fas fa-calendar-plus"></i> تعيين جدول</h3>
+            <div class="form-group">
+                <label>المنطقة</label>
+                <select id="scheduleArea">
+                    <option value="">اختر المنطقة</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>الموظف المسؤول</label>
+                <select id="scheduleEmployee">
+                    <option value="">اختر الموظف</option>
+                </select>
+            </div>
+            <button id="addSchedule" class="btn btn-success"><i class="fas fa-check"></i> تعيين</button>
+            <button id="openAreaEditorBtn" class="btn btn-secondary" style="margin-top:10px;"><i
+                    class="fas fa-edit"></i> تعديل المناطق</button>
         </div>
     </div>
 
-    <div id="notificationModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <span id="closeNotificationModal" class="close">&times;</span>
-            <div class="notification-center">
-                <div class="nc-header">
-                    <h3><i class="fas fa-broadcast-tower"></i> مركز الإشعارات</h3>
-                </div>
-                <div class="nc-tabs">
-                    <div class="nc-tab active" data-tab="new">إشعار جديد</div>
-                    <div class="nc-tab" data-tab="history">سجل الإشعارات</div>
-                </div>
-                <div id="ncTabNew">
-                    <div class="notif-type-group">
-                        <label class="notif-type-card" id="typeStartCard">
-                            <input type="radio" name="notifType" value="start" checked>
-                            <i class="fas fa-play-circle"></i>
-                            <span>بدء التوزيع</span>
-                        </label>
-                        <label class="notif-type-card" id="typeEndCard">
-                            <input type="radio" name="notifType" value="end">
-                            <i class="fas fa-stop-circle"></i>
-                            <span>انتهاء التوزيع</span>
-                        </label>
-                        <label class="notif-type-card" id="typeEmergencyCard">
-                            <input type="radio" name="notifType" value="emergency">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span>طارئ</span>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label>المنطقة المستهدفة</label>
-                        <select id="notifyScheduleSelect">
-                            <option value="">-- اختر منطقة التوزيع --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>نص الإشعار</label>
-                        <textarea id="notificationMessage" rows="4"
-                            placeholder="سيتم توليد النص تلقائياً..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>مدة العرض (ساعات)</label>
-                        <input type="number" id="notificationDuration" value="24" min="1" max="72">
-                    </div>
-                    <button id="confirmSend" class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i> إرسال الإشعار
-                    </button>
-
-                </div>
-                <div id="ncTabHistory" style="display:none;">
-                    <div id="notificationHistoryList" style="max-height: 300px; overflow-y: auto;"></div>
-                </div>
+    <div class="dashboard-content">
+        <div class="schedules-list">
+            <h4><i class="fas fa-users"></i> قائمة الموظفين</h4>
+            <div class="form-group">
+                <input type="text" id="employeeSearch" placeholder="بحث عن موظف...">
             </div>
+            <div id="employeesContainer" style="max-height: 500px; overflow-y: auto;"></div>
+        </div>
+
+        <div class="schedules-list">
+            <h4><i class="fas fa-tasks"></i> جداول التوزيع الحالية</h4>
+            <div id="managerSchedulesContainer" class="schedules-grid"></div>
         </div>
     </div>
+</div>
 
-    <!-- Logout Confirmation Modal -->
-    <div id="logoutModal" class="modal">
-        <div class="modal-content" style="max-width: 420px; text-align: center; padding: 35px;">
-            <div style="margin-bottom: 25px;">
-                <i class="fas fa-sign-out-alt"
-                    style="font-size: 4.5rem; color: var(--primary); opacity: 0.9; animation: pulse 2s infinite;"></i>
+<div id="areaEditorModal" class="modal">
+    <div class="modal-content">
+        <span id="closeAreaEditorModal" class="close">&times;</span>
+        <h3>تعديل بيانات المنطقة</h3>
+        <div class="form-group">
+            <label>اختر المنطقة</label>
+            <select id="areaEditorSelect"></select>
+        </div>
+        <div class="form-group">
+            <label>اسم المنطقة</label>
+            <input type="text" id="areaEditorName">
+        </div>
+        <div class="form-group">
+            <label>الوصف</label>
+            <textarea id="areaEditorDesc" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+            <label>تغيير الموظف المسؤول</label>
+            <select id="areaEditorEmployee"></select>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button id="saveAreaEditBtn" class="btn btn-primary">حفظ التغييرات</button>
+            <button id="deleteAreaBtn" class="btn btn-danger">حذف المنطقة</button>
+        </div>
+    </div>
+</div>
+
+<div id="employeeEditorModal" class="modal">
+    <div class="modal-content">
+        <span id="closeEmployeeEditorModal" class="close">&times;</span>
+        <h3>تعديل بيانات الموظف</h3>
+        <input type="hidden" id="employeeEditorId">
+        <div class="form-group">
+            <label>الاسم</label>
+            <input type="text" id="employeeEditorName">
+        </div>
+        <div class="form-group">
+            <label>رقم الهاتف</label>
+            <input type="text" id="employeeEditorPhone">
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button id="saveEmployeeEditBtn" class="btn btn-primary">حفظ التغييرات</button>
+            <button id="deleteEmployeeBtn" class="btn btn-danger">حذف الموظف</button>
+        </div>
+    </div>
+</div>
+
+<div id="notificationModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <span id="closeNotificationModal" class="close">&times;</span>
+        <div class="notification-center">
+            <div class="nc-header">
+                <h3><i class="fas fa-broadcast-tower"></i> مركز الإشعارات</h3>
             </div>
-            <h3 style="margin-bottom: 15px; font-size: 1.6rem; color: white;">تأكيد المغادرة</h3>
-            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 1.05rem; line-height: 1.6;">
-                هل أنت متأكد من رغبتك في الرجوع للشاشة الرئيسية؟<br>
-                <span style="font-size: 0.9rem; opacity: 0.8;">سيتم حفظ جميع التغييرات تلقائياً</span>
-            </p>
-            <div style="display: flex; gap: 15px; justify-content: center;">
-                <button id="confirmLogoutBtn" class="btn btn-danger"
-                    style="padding: 12px 30px; border-radius: 50px; font-weight: bold;">
-                    <i class="fas fa-check-circle"></i> نعم، غادر
+            <div class="nc-tabs">
+                <div class="nc-tab active" data-tab="new">إشعار جديد</div>
+                <div class="nc-tab" data-tab="history">سجل الإشعارات</div>
+            </div>
+            <div id="ncTabNew">
+                <div class="notif-type-group">
+                    <label class="notif-type-card" id="typeStartCard">
+                        <input type="radio" name="notifType" value="start" checked>
+                        <i class="fas fa-play-circle"></i>
+                        <span>بدء التوزيع</span>
+                    </label>
+                    <label class="notif-type-card" id="typeEndCard">
+                        <input type="radio" name="notifType" value="end">
+                        <i class="fas fa-stop-circle"></i>
+                        <span>انتهاء التوزيع</span>
+                    </label>
+                    <label class="notif-type-card" id="typeEmergencyCard">
+                        <input type="radio" name="notifType" value="emergency">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>طارئ</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>المنطقة المستهدفة</label>
+                    <select id="notifyScheduleSelect">
+                        <option value="">-- اختر منطقة التوزيع --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>نص الإشعار</label>
+                    <textarea id="notificationMessage" rows="4" placeholder="سيتم توليد النص تلقائياً..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>مدة العرض (ساعات)</label>
+                    <input type="number" id="notificationDuration" value="24" min="1" max="72">
+                </div>
+                <button id="confirmSend" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> إرسال الإشعار
                 </button>
-                <button id="cancelLogoutBtn" class="btn btn-secondary"
-                    style="padding: 12px 30px; border-radius: 50px; font-weight: bold;">
-                    <i class="fas fa-times-circle"></i> إلغاء
-                </button>
+
+            </div>
+            <div id="ncTabHistory" style="display:none;">
+                <div id="notificationHistoryList" style="max-height: 300px; overflow-y: auto;"></div>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
-    <script src="firebase_config.js"></script>
-    <script src="firebase_service.js?v=1.1"></script>
-    <script>
-        // Global Data
-        let areas = [];
-        let employees = [];
-        let schedules = [];
-        window.drawnGeoJSON = null;
+<!-- Logout Confirmation Modal -->
+<div id="logoutModal" class="modal">
+    <div class="modal-content" style="max-width: 420px; text-align: center; padding: 35px;">
+        <div style="margin-bottom: 25px;">
+            <i class="fas fa-sign-out-alt"
+                style="font-size: 4.5rem; color: var(--primary); opacity: 0.9; animation: pulse 2s infinite;"></i>
+        </div>
+        <h3 style="margin-bottom: 15px; font-size: 1.6rem; color: white;">تأكيد المغادرة</h3>
+        <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 1.05rem; line-height: 1.6;">
+            هل أنت متأكد من رغبتك في الرجوع للشاشة الرئيسية؟<br>
+            <span style="font-size: 0.9rem; opacity: 0.8;">سيتم حفظ جميع التغييرات تلقائياً</span>
+        </p>
+        <div style="display: flex; gap: 15px; justify-content: center;">
+            <button id="confirmLogoutBtn" class="btn btn-danger"
+                style="padding: 12px 30px; border-radius: 50px; font-weight: bold;">
+                <i class="fas fa-check-circle"></i> نعم، غادر
+            </button>
+            <button id="cancelLogoutBtn" class="btn btn-secondary"
+                style="padding: 12px 30px; border-radius: 50px; font-weight: bold;">
+                <i class="fas fa-times-circle"></i> إلغاء
+            </button>
+        </div>
+    </div>
+</div>
 
-        function loadData() {
-            try {
-                const areasData = localStorage.getItem('areas');
-                const employeesData = localStorage.getItem('employees');
-                const schedulesData = localStorage.getItem('schedules');
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
+<script src="firebase_config.js"></script>
+<script src="firebase_service.js?v=1.1"></script>
+<script>
+    // Global Data
+    let areas = [];
+    let employees = [];
+    let schedules = [];
+    window.drawnGeoJSON = null;
 
-                if (areasData) areas = JSON.parse(areasData);
-                if (employeesData) employees = JSON.parse(employeesData);
-                if (schedulesData) schedules = JSON.parse(schedulesData);
+    function loadData() {
+        try {
+            const areasData = localStorage.getItem('areas');
+            const employeesData = localStorage.getItem('employees');
+            const schedulesData = localStorage.getItem('schedules');
 
-                updateUI();
-            } catch (error) {
-                console.error('Error loading data:', error);
-            }
-        }
+            if (areasData) areas = JSON.parse(areasData);
+            if (employeesData) employees = JSON.parse(employeesData);
+            if (schedulesData) schedules = JSON.parse(schedulesData);
 
-        function persistAll() {
-            try {
-                localStorage.setItem('areas', JSON.stringify(areas));
-                localStorage.setItem('employees', JSON.stringify(employees));
-                localStorage.setItem('schedules', JSON.stringify(schedules));
-
-                if (typeof saveAllData === 'function') {
-                    saveAllData().then(() => {
-                        showToast('تم الحفظ في قاعدة البيانات');
-                    }).catch(err => {
-                        console.error('Firebase save error:', err);
-                        showToast('فشل الحفظ في قاعدة البيانات', 'danger');
-                    });
-                }
-            } catch (error) {
-                console.error('Error persisting data:', error);
-                showToast('حدث خطأ أثناء الحفظ', 'danger');
-            }
-        }
-
-        function updateUI() {
-            populateAreaEditorSelects();
-            updateEmployeeList();
+            updateUI();
             updateScheduleList();
+        } catch (error) {
+            console.error('Error loading data:', error);
         }
+    }
 
-        function populateAreaEditorSelects() {
-            const select = document.getElementById('scheduleArea');
-            const filter = document.getElementById('areaFilter');
+    function persistAll() {
+        try {
+            localStorage.setItem('areas', JSON.stringify(areas));
+            localStorage.setItem('employees', JSON.stringify(employees));
+            localStorage.setItem('schedules', JSON.stringify(schedules));
 
-            if (select) {
-                select.innerHTML = '<option value="">اختر المنطقة</option>';
-                areas.forEach(area => {
-                    const opt = document.createElement('option');
-                    opt.value = area.id;
-                    opt.textContent = area.name;
-                    select.appendChild(opt);
+            if (typeof saveAllData === 'function') {
+                saveAllData(areas, employees, schedules).then(() => {
+                    showToast('تم الحفظ في قاعدة البيانات');
+                }).catch(err => {
+                    console.error('Firebase save error:', err);
+                    showToast('فشل الحفظ في قاعدة البيانات', 'danger');
                 });
             }
+        } catch (error) {
+            console.error('Error persisting data:', error);
+            showToast('حدث خطأ أثناء الحفظ', 'danger');
+        }
+    }
 
-            if (filter) {
-                filter.innerHTML = '<option value="all">كل المناطق</option>';
-                areas.forEach(area => {
-                    const opt = document.createElement('option');
-                    opt.value = area.id;
-                    opt.textContent = area.name;
-                    filter.appendChild(opt);
-                });
-            }
+    function updateUI() {
+        populateAreaEditorSelects();
+        updateEmployeeList();
+        updateScheduleList();
+    }
+
+    function populateAreaEditorSelects() {
+        const select = document.getElementById('scheduleArea');
+        const filter = document.getElementById('areaFilter');
+
+        if (select) {
+            select.innerHTML = '<option value="">اختر المنطقة</option>';
+            areas.forEach(area => {
+                const opt = document.createElement('option');
+                opt.value = area.id;
+                opt.textContent = area.name;
+                select.appendChild(opt);
+            });
         }
 
-        function updateEmployeeList() {
-            const list = document.getElementById('employeeList');
-            const searchInput = document.getElementById('employeeSearch');
-            const search = searchInput ? searchInput.value.toLowerCase() : '';
+        if (filter) {
+            filter.innerHTML = '<option value="all">كل المناطق</option>';
+            areas.forEach(area => {
+                const opt = document.createElement('option');
+                opt.value = area.id;
+                opt.textContent = area.name;
+                filter.appendChild(opt);
+            });
+        }
+    }
 
-            if (!list) return;
+    function updateEmployeeList() {
+        const list = document.getElementById('employeeList');
+        const searchInput = document.getElementById('employeeSearch');
+        const search = searchInput ? searchInput.value.toLowerCase() : '';
 
-            list.innerHTML = '';
-            employees.filter(e => e.name.toLowerCase().includes(search)).forEach(emp => {
-                const div = document.createElement('div');
-                div.className = 'employee-card';
-                div.innerHTML = `
+        if (!list) return;
+
+        list.innerHTML = '';
+        employees.filter(e => e.name.toLowerCase().includes(search)).forEach(emp => {
+            const div = document.createElement('div');
+            div.className = 'employee-card';
+            div.innerHTML = `
                     <div class="employee-info">
                         <h4>${emp.name}</h4>
                         <p>${emp.phone}</p>
@@ -876,39 +860,39 @@
                         <button onclick="deleteEmployee(${emp.id})" class="btn-icon delete" title="حذف"><i class="fas fa-trash"></i></button>
                     </div>
                 `;
-                list.appendChild(div);
+            list.appendChild(div);
+        });
+
+        const scheduleEmpSelect = document.getElementById('scheduleEmployee');
+        if (scheduleEmpSelect) {
+            scheduleEmpSelect.innerHTML = '<option value="">اختر الموظف</option>';
+            employees.forEach(emp => {
+                const opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = emp.name;
+                scheduleEmpSelect.appendChild(opt);
             });
-
-            const scheduleEmpSelect = document.getElementById('scheduleEmployee');
-            if (scheduleEmpSelect) {
-                scheduleEmpSelect.innerHTML = '<option value="">اختر الموظف</option>';
-                employees.forEach(emp => {
-                    const opt = document.createElement('option');
-                    opt.value = emp.id;
-                    opt.textContent = emp.name;
-                    scheduleEmpSelect.appendChild(opt);
-                });
-            }
         }
+    }
 
-        function updateScheduleList() {
-            const tbody = document.getElementById('scheduleTableBody');
-            if (!tbody) return;
+    function updateScheduleList() {
+        const tbody = document.getElementById('scheduleTableBody');
+        if (!tbody) return;
 
-            tbody.innerHTML = '';
-            const filterElem = document.getElementById('areaFilter');
-            const filterAreaId = filterElem ? filterElem.value : 'all';
+        tbody.innerHTML = '';
+        const filterElem = document.getElementById('areaFilter');
+        const filterAreaId = filterElem ? filterElem.value : 'all';
 
-            const filteredSchedules = filterAreaId === 'all'
-                ? schedules
-                : schedules.filter(s => s.areaId == filterAreaId);
+        const filteredSchedules = filterAreaId === 'all'
+            ? schedules
+            : schedules.filter(s => s.areaId == filterAreaId);
 
-            filteredSchedules.forEach(sch => {
-                const area = areas.find(a => a.id === sch.areaId);
-                const emp = employees.find(e => e.id === sch.employeeId);
+        filteredSchedules.forEach(sch => {
+            const area = areas.find(a => a.id === sch.areaId);
+            const emp = employees.find(e => e.id === sch.employeeId);
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
                     <td>${area ? area.name : 'غير معروف'}</td>
                     <td>${emp ? emp.name : 'غير معروف'}</td>
                     <td>${sch.date || '-'}</td>
@@ -923,541 +907,541 @@
                         <button onclick="deleteSchedule(${sch.id})" class="btn-icon delete"><i class="fas fa-trash"></i></button>
                     </td>
                 `;
-                tbody.appendChild(tr);
-            });
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Event Listeners
+    document.getElementById('addEmployee').onclick = () => {
+        const name = document.getElementById('employeeName').value.trim();
+        const phone = document.getElementById('employeePhone').value.trim();
+
+        if (!name || !phone) return showToast('يرجى ملء جميع الحقول', 'danger');
+
+        const newEmployee = {
+            id: Date.now(),
+            name,
+            phone
+        };
+
+        employees.push(newEmployee);
+        document.getElementById('employeeName').value = '';
+        document.getElementById('employeePhone').value = '';
+        persistAll();
+        updateUI();
+        showToast('تم إضافة الموظف بنجاح');
+    };
+
+    document.getElementById('addArea').onclick = () => {
+        const name = document.getElementById('areaName').value.trim();
+        const desc = document.getElementById('areaDescription').value.trim();
+        const x = document.getElementById('areaCoordX').value;
+        const y = document.getElementById('areaCoordY').value;
+
+        if (!name) return showToast('يرجى إدخال اسم المنطقة', 'danger');
+
+        const newArea = {
+            id: Date.now(),
+            name,
+            description: desc,
+            lat: y ? parseFloat(y) : null,
+            lng: x ? parseFloat(x) : null,
+            geojson: window.drawnGeoJSON || null
+        };
+
+        areas.push(newArea);
+        document.getElementById('areaName').value = '';
+        document.getElementById('areaDescription').value = '';
+        document.getElementById('areaCoordX').value = '';
+        document.getElementById('areaCoordY').value = '';
+        window.drawnGeoJSON = null;
+        persistAll();
+        updateUI();
+        showToast('تم إضافة المنطقة بنجاح');
+    };
+
+    document.getElementById('addSchedule').onclick = () => {
+        const areaId = Number(document.getElementById('scheduleArea').value);
+        const empId = Number(document.getElementById('scheduleEmployee').value);
+        if (!areaId || !empId) return showToast('يرجى اختيار المنطقة والموظف', 'danger');
+
+        schedules.push({
+            id: Date.now(),
+            areaId,
+            employeeId: empId,
+            date: '',
+            startTime: '',
+            duration: 4,
+            status: 'pending'
+        });
+
+        persistAll();
+        updateUI();
+        showToast('تم تعيين المنطقة للموظف بنجاح');
+    };
+
+    document.getElementById('openDrawAreaBtn').onclick = () => {
+        const drawWindow = window.open('draw_map.html', 'drawMap', 'width=1200,height=800');
+        if (drawWindow) {
+            showToast('تم فتح نافذة الرسم');
+        } else {
+            showToast('فشل فتح نافذة الرسم. يرجى السماح بالنوافذ المنبثقة', 'danger');
         }
+    };
 
-        // Event Listeners
-        document.getElementById('addEmployee').onclick = () => {
-            const name = document.getElementById('employeeName').value.trim();
-            const phone = document.getElementById('employeePhone').value.trim();
+    function showToast(msg, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'notification-toast';
+        toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--success)';
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
 
-            if (!name || !phone) return showToast('يرجى ملء جميع الحقول', 'danger');
-
-            const newEmployee = {
-                id: Date.now(),
-                name,
-                phone
-            };
-
-            employees.push(newEmployee);
-            document.getElementById('employeeName').value = '';
-            document.getElementById('employeePhone').value = '';
+    window.deleteEmployee = (id) => {
+        if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
+            employees = employees.filter(e => e.id !== id);
             persistAll();
             updateUI();
-            showToast('تم إضافة الموظف بنجاح');
-        };
-
-        document.getElementById('addArea').onclick = () => {
-            const name = document.getElementById('areaName').value.trim();
-            const desc = document.getElementById('areaDescription').value.trim();
-            const x = document.getElementById('areaCoordX').value;
-            const y = document.getElementById('areaCoordY').value;
-
-            if (!name) return showToast('يرجى إدخال اسم المنطقة', 'danger');
-
-            const newArea = {
-                id: Date.now(),
-                name,
-                description: desc,
-                lat: y ? parseFloat(y) : null,
-                lng: x ? parseFloat(x) : null,
-                geojson: window.drawnGeoJSON || null
-            };
-
-            areas.push(newArea);
-            document.getElementById('areaName').value = '';
-            document.getElementById('areaDescription').value = '';
-            document.getElementById('areaCoordX').value = '';
-            document.getElementById('areaCoordY').value = '';
-            window.drawnGeoJSON = null;
-            persistAll();
-            updateUI();
-            showToast('تم إضافة المنطقة بنجاح');
-        };
-
-        document.getElementById('addSchedule').onclick = () => {
-            const areaId = Number(document.getElementById('scheduleArea').value);
-            const empId = Number(document.getElementById('scheduleEmployee').value);
-            if (!areaId || !empId) return showToast('يرجى اختيار المنطقة والموظف', 'danger');
-
-            schedules.push({
-                id: Date.now(),
-                areaId,
-                employeeId: empId,
-                date: '',
-                startTime: '',
-                duration: 4,
-                status: 'pending'
-            });
-
-            persistAll();
-            updateUI();
-            showToast('تم تعيين المنطقة للموظف بنجاح');
-        };
-
-        document.getElementById('openDrawAreaBtn').onclick = () => {
-            const drawWindow = window.open('draw_map.html', 'drawMap', 'width=1200,height=800');
-            if (drawWindow) {
-                showToast('تم فتح نافذة الرسم');
-            } else {
-                showToast('فشل فتح نافذة الرسم. يرجى السماح بالنوافذ المنبثقة', 'danger');
-            }
-        };
-
-        function showToast(msg, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = 'notification-toast';
-            toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--success)';
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
         }
+    };
 
-        window.deleteEmployee = (id) => {
-            if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
-                employees = employees.filter(e => e.id !== id);
-                persistAll();
-                updateUI();
+    window.deleteSchedule = (id) => {
+        if (confirm('هل أنت متأكد من حذف هذا الجدول؟')) {
+            schedules = schedules.filter(s => s.id !== id);
+            persistAll();
+            updateUI();
+        }
+    };
+
+    window.editAreaCard = (areaId) => {
+        const area = areas.find(a => a.id === areaId);
+        if (!area) return;
+
+        document.getElementById('scheduleArea').value = areaId;
+        areaEditorSelect.innerHTML = '<option value="">اختر المنطقة لتعديلها</option>';
+        areas.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a.id;
+            opt.textContent = a.name;
+            if (a.id === areaId) opt.selected = true;
+            areaEditorSelect.appendChild(opt);
+        });
+
+        areaEditorName.value = area.name;
+        areaEditorDesc.value = area.description || '';
+        populateAreaEditorEmployees(areaId);
+        areaEditorModal.style.display = 'flex';
+    };
+
+    window.deleteAreaCard = (areaId) => {
+        const area = areas.find(a => a.id === areaId);
+        if (!area) return;
+
+        if (confirm(`هل أنت متأكد من حذف منطقة "${area.name}" ؟ سيتم حذف جميع التعيينات المرتبطة
+                    بها.`)) {
+            areas = areas.filter(a => a.id !== areaId);
+            schedules = schedules.filter(s => s.areaId !== areaId);
+            persistAll();
+            updateUI();
+            showToast('تم حذف المنطقة بنجاح');
+        }
+    };
+
+    window.updateCoordinates = (lat, lng, geojson) => {
+        document.getElementById('areaCoordX').value = lng;
+        document.getElementById('areaCoordY').value = lat;
+        window.drawnGeoJSON = geojson;
+        showToast('تم استلام الإحداثيات من الخريطة');
+    };
+
+    const areaEditorModal = document.getElementById('areaEditorModal');
+    const areaEditorSelect = document.getElementById('areaEditorSelect');
+    const areaEditorName = document.getElementById('areaEditorName');
+    const areaEditorDesc = document.getElementById('areaEditorDesc');
+    const areaEditorEmployee = document.getElementById('areaEditorEmployee');
+
+    function populateAreaEditorEmployees(areaId) {
+        areaEditorEmployee.innerHTML = '<option value="">اختر الموظف</option>';
+        const assignedSchedule = schedules.find(s => s.areaId === areaId);
+        const assignedEmployeeId = assignedSchedule ? assignedSchedule.employeeId : null;
+
+        employees.forEach(emp => {
+            const opt = document.createElement('option');
+            opt.value = emp.id;
+            opt.textContent = emp.name;
+            if (emp.id === assignedEmployeeId) {
+                opt.selected = true;
             }
-        };
+            areaEditorEmployee.appendChild(opt);
+        });
+    }
 
-        window.deleteSchedule = (id) => {
-            if (confirm('هل أنت متأكد من حذف هذا الجدول؟')) {
-                schedules = schedules.filter(s => s.id !== id);
-                persistAll();
-                updateUI();
-            }
-        };
+    document.getElementById('openAreaEditorBtn').onclick = () => {
+        const selectedAreaId = document.getElementById('scheduleArea').value;
+        if (!selectedAreaId) return showToast('يرجى اختيار منطقة أولاً', 'danger');
 
-        window.editAreaCard = (areaId) => {
-            const area = areas.find(a => a.id === areaId);
-            if (!area) return;
+        areaEditorSelect.innerHTML = '<option value="">اختر المنطقة لتعديلها</option>';
+        areas.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a.id;
+            opt.textContent = a.name;
+            if (a.id == selectedAreaId) opt.selected = true;
+            areaEditorSelect.appendChild(opt);
+        });
 
-            document.getElementById('scheduleArea').value = areaId;
-            areaEditorSelect.innerHTML = '<option value="">اختر المنطقة لتعديلها</option>';
-            areas.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a.id;
-                opt.textContent = a.name;
-                if (a.id === areaId) opt.selected = true;
-                areaEditorSelect.appendChild(opt);
-            });
-
+        const area = areas.find(a => a.id == selectedAreaId);
+        if (area) {
             areaEditorName.value = area.name;
             areaEditorDesc.value = area.description || '';
-            populateAreaEditorEmployees(areaId);
-            areaEditorModal.style.display = 'flex';
-        };
-
-        window.deleteAreaCard = (areaId) => {
-            const area = areas.find(a => a.id === areaId);
-            if (!area) return;
-
-            if (confirm(`هل أنت متأكد من حذف منطقة "${area.name}" ؟ سيتم حذف جميع التعيينات المرتبطة
-                    بها.`)) {
-                areas = areas.filter(a => a.id !== areaId);
-                schedules = schedules.filter(s => s.areaId !== areaId);
-                persistAll();
-                updateUI();
-                showToast('تم حذف المنطقة بنجاح');
-            }
-        };
-
-        window.updateCoordinates = (lat, lng, geojson) => {
-            document.getElementById('areaCoordX').value = lng;
-            document.getElementById('areaCoordY').value = lat;
-            window.drawnGeoJSON = geojson;
-            showToast('تم استلام الإحداثيات من الخريطة');
-        };
-
-        const areaEditorModal = document.getElementById('areaEditorModal');
-        const areaEditorSelect = document.getElementById('areaEditorSelect');
-        const areaEditorName = document.getElementById('areaEditorName');
-        const areaEditorDesc = document.getElementById('areaEditorDesc');
-        const areaEditorEmployee = document.getElementById('areaEditorEmployee');
-
-        function populateAreaEditorEmployees(areaId) {
-            areaEditorEmployee.innerHTML = '<option value="">اختر الموظف</option>';
-            const assignedSchedule = schedules.find(s => s.areaId === areaId);
-            const assignedEmployeeId = assignedSchedule ? assignedSchedule.employeeId : null;
-
-            employees.forEach(emp => {
-                const opt = document.createElement('option');
-                opt.value = emp.id;
-                opt.textContent = emp.name;
-                if (emp.id === assignedEmployeeId) {
-                    opt.selected = true;
-                }
-                areaEditorEmployee.appendChild(opt);
-            });
+            populateAreaEditorEmployees(Number(selectedAreaId));
         }
+        areaEditorModal.style.display = 'flex';
+    };
 
-        document.getElementById('openAreaEditorBtn').onclick = () => {
-            const selectedAreaId = document.getElementById('scheduleArea').value;
-            if (!selectedAreaId) return showToast('يرجى اختيار منطقة أولاً', 'danger');
+    document.getElementById('closeAreaEditorModal').onclick = () => {
+        areaEditorModal.style.display = 'none';
+    };
 
-            areaEditorSelect.innerHTML = '<option value="">اختر المنطقة لتعديلها</option>';
-            areas.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a.id;
-                opt.textContent = a.name;
-                if (a.id == selectedAreaId) opt.selected = true;
-                areaEditorSelect.appendChild(opt);
-            });
-
-            const area = areas.find(a => a.id == selectedAreaId);
-            if (area) {
-                areaEditorName.value = area.name;
-                areaEditorDesc.value = area.description || '';
-                populateAreaEditorEmployees(Number(selectedAreaId));
-            }
-            areaEditorModal.style.display = 'flex';
-        };
-
-        document.getElementById('closeAreaEditorModal').onclick = () => {
+    window.onclick = (event) => {
+        if (event.target == areaEditorModal) {
             areaEditorModal.style.display = 'none';
-        };
-
-        window.onclick = (event) => {
-            if (event.target == areaEditorModal) {
-                areaEditorModal.style.display = 'none';
-            }
-            if (event.target == employeeEditorModal) {
-                employeeEditorModal.style.display = 'none';
-            }
-            if (event.target == logoutModal) {
-                logoutModal.style.display = 'none';
-            }
-            if (event.target == document.getElementById('notificationModal')) {
-                document.getElementById('notificationModal').style.display = 'none';
-            }
-        };
-
-        areaEditorSelect.onchange = () => {
-            const id = areaEditorSelect.value;
-            if (!id) return;
-            const area = areas.find(a => a.id == id);
-
-            if (area) {
-                areaEditorName.value = area.name;
-                areaEditorDesc.value = area.description || '';
-                populateAreaEditorEmployees(Number(id));
-            }
-        };
-
-        document.getElementById('saveAreaEditBtn').onclick = () => {
-            const id = areaEditorSelect.value;
-            if (!id) return showToast('يرجى اختيار منطقة', 'danger');
-
-            const name = areaEditorName.value.trim();
-            const desc = areaEditorDesc.value.trim();
-            const selectedEmployeeId = Number(areaEditorEmployee.value);
-
-            if (!name) return showToast('يرجى إدخال اسم المنطقة', 'danger');
-
-            const areaIndex = areas.findIndex(a => a.id == id);
-
-            if (areaIndex !== -1) {
-                areas[areaIndex].name = name;
-                areas[areaIndex].description = desc;
-
-                schedules = schedules.filter(s => s.areaId != id);
-
-                if (selectedEmployeeId) {
-                    schedules.push({
-                        id: Date.now(),
-                        areaId: Number(id),
-                        employeeId: selectedEmployeeId,
-                        date: '',
-                        startTime: '',
-                        duration: 4,
-                        status: 'pending'
-                    });
-                }
-
-                persistAll();
-                updateUI();
-                showToast('تم تحديث المنطقة بنجاح');
-                areaEditorModal.style.display = 'none';
-            }
-        };
-
-        document.getElementById('deleteAreaBtn').onclick = () => {
-            const id = areaEditorSelect.value;
-            if (!id) return showToast('يرجى اختيار منطقة', 'danger');
-
-            if (confirm('هل أنت متأكد من حذف هذه المنطقة؟ سيتم حذف جميع الجداول المرتبطة بها.')) {
-                areas = areas.filter(a => a.id != id);
-                schedules = schedules.filter(s => s.areaId != id);
-                persistAll();
-                updateUI();
-                showToast('تم حذف المنطقة بنجاح');
-                areaEditorModal.style.display = 'none';
-            }
-        };
-
-        const employeeEditorModal = document.getElementById('employeeEditorModal');
-        const employeeEditorName = document.getElementById('employeeEditorName');
-        const employeeEditorPhone = document.getElementById('employeeEditorPhone');
-        const employeeEditorId = document.getElementById('employeeEditorId');
-
-        window.openEmployeeEditor = (id) => {
-            const emp = employees.find(e => e.id === id);
-            if (!emp) return;
-            employeeEditorId.value = emp.id;
-            employeeEditorName.value = emp.name;
-            employeeEditorPhone.value = emp.phone;
-            employeeEditorModal.style.display = 'flex';
-        };
-
-        document.getElementById('closeEmployeeEditorModal').onclick = () => {
-            employeeEditorModal.style.display = 'none';
-        };
-
-        document.getElementById('saveEmployeeEditBtn').onclick = () => {
-            const id = Number(employeeEditorId.value);
-            const name = employeeEditorName.value.trim();
-            const phone = employeeEditorPhone.value.trim();
-
-            if (!name || !phone) return showToast('يرجى ملء جميع الحقول', 'danger');
-
-            const index = employees.findIndex(e => e.id === id);
-
-            if (index !== -1) {
-                employees[index].name = name;
-                employees[index].phone = phone;
-                persistAll();
-                updateUI();
-
-                showToast('تم تحديث بيانات الموظف');
-                employeeEditorModal.style.display = 'none';
-            }
-        };
-
-        document.getElementById('deleteEmployeeBtn').onclick = () => {
-            const id = Number(employeeEditorId.value);
-
-            if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
-                employees = employees.filter(e => e.id !== id);
-                persistAll();
-                updateUI();
-                showToast('تم حذف الموظف');
-                employeeEditorModal.style.display = 'none';
-            }
-        };
-
-        function attachNotificationHandlers() {
-            const headerBtn = document.getElementById('headerBroadcastBtn');
-            const modal = document.getElementById('notificationModal');
-            const close = document.getElementById('closeNotificationModal');
-            const select = document.getElementById('notifyScheduleSelect');
-            const msg = document.getElementById('notificationMessage');
-            const send = document.getElementById('confirmSend');
-            const tabs = document.querySelectorAll('.nc-tab');
-            const typeRadios = document.querySelectorAll('input[name="notifType"]');
-
-            const openModal = () => {
-                modal.style.display = 'flex';
-                populateNotificationSchedules();
-                populateNotificationHistory();
-            };
-
-            if (headerBtn) headerBtn.onclick = openModal;
-            if (close) close.onclick = () => modal.style.display = 'none';
-
-            tabs.forEach(tab => {
-                tab.onclick = () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-
-                    if (tab.dataset.tab === 'new') {
-                        document.getElementById('ncTabNew').style.display = 'block';
-                        document.getElementById('ncTabHistory').style.display = 'none';
-                    } else {
-                        document.getElementById('ncTabNew').style.display = 'none';
-                        document.getElementById('ncTabHistory').style.display = 'block';
-                        populateNotificationHistory();
-                    }
-                };
-            });
-
-            const updateMessage = () => {
-                const scheduleId = Number(select.value);
-                const schedule = schedules.find(s => s.id === scheduleId);
-                const type = document.querySelector('input[name="notifType"]:checked').value;
-
-                document.querySelectorAll('.notif-type-card').forEach(c => c.classList.remove('selected'));
-                if (type === 'start') document.getElementById('typeStartCard').classList.add('selected');
-                else if (type === 'end') document.getElementById('typeEndCard').classList.add('selected');
-                else if (type === 'emergency')
-                    document.getElementById('typeEmergencyCard').classList.add('selected');
-
-                if (schedule) {
-                    const area = areas.find(a => a.id === schedule.areaId);
-
-                    if (area) {
-                        if (type === 'start') {
-                            // Convert 24h time to 12h time
-                            let timeDisplay = schedule.startTime || 'الآن';
-                            if (timeDisplay !== 'الآن') {
-                                try {
-                                    const [hours, minutes] = timeDisplay.split(':');
-                                    const date = new Date();
-                                    date.setHours(hours);
-                                    date.setMinutes(minutes);
-                                    timeDisplay = date.toLocaleTimeString('en-US', {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        hour12: true
-                                    });
-                                } catch (e) { }
-                            }
-                            msg.value = `تنويه: بدء توزيع المياه في ${area.name}\n\nوقت البدء: ${timeDisplay}\n\nمدة
-                    التجهيز:
-                    ${schedule.duration} ساعة`;
-                        } else if (type === 'end') {
-                            msg.value = `تنويه: انتهاء توزيع المياه في ${area.name}\n\nشكراً لتعاونكم.`;
-                        } else {
-                            msg.value = `تنويه هام: توقف ضخ المياه في ${area.name}\n\nبسبب أعمال صيانة طارئة.\nنعتذر عن
-                    الإزعاج.`;
-                        }
-                    }
-                } else {
-                    if (type === 'emergency') {
-                        msg.value = `تنويه هام: توقف ضخ المياه بسبب أعمال صيانة طارئة أو انقطاع التيار
-                    الكهربائي.\nنعتذر عن
-                    الإزعاج.`;
-                    } else {
-                        msg.value = '';
-                    }
-                }
-            };
-
-            if (select) select.onchange = updateMessage;
-            typeRadios.forEach(radio => radio.onchange = updateMessage);
-
-            if (send) send.onclick = async () => {
-                if (!msg.value.trim()) {
-                    showToast('الرجاء إدخال نص الإشعار', 'danger');
-                    return;
-                }
-
-                const durationHours = Number(document.getElementById('notificationDuration').value) || 24;
-                const expiresAt = Date.now() + (durationHours * 60 * 60 * 1000);
-
-                const notification = {
-                    id: Date.now(),
-                    message: msg.value,
-                    timestamp: new Date().getTime(),
-                    expiresAt: expiresAt
-                };
-
-                // 1. Save locally first
-                try {
-                    const raw = localStorage.getItem('waterNotifications');
-                    const notifs = raw ? JSON.parse(raw) : [];
-                    notifs.push(notification);
-                    localStorage.setItem('waterNotifications', JSON.stringify(notifs));
-
-                    modal.style.display = 'none';
-                    msg.value = '';
-                } catch (e) {
-                    console.error("Local save error:", e);
-                    showToast('حدث خطأ في الحفظ المحلي', 'danger');
-                    return;
-                }
-
-                // 2. Try network broadcast in background
-                if (typeof broadcastNotification === 'function') {
-                    broadcastNotification(notification).then(() => {
-                        console.log("Broadcast success");
-                        showToast('تم تعميم الإشعار بنجاح');
-                    }).catch(err => {
-                        console.error("Broadcast failed:", err);
-                        showToast('تم الحفظ محلياً فقط (فشل الاتصال)', 'warning');
-                    });
-                }
-
-                if (window.opener && window.opener.checkForNotifications) {
-                    try {
-                        window.opener.checkForNotifications();
-                    } catch (e) { }
-                }
-            };
-
-            window.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
         }
+        if (event.target == employeeEditorModal) {
+            employeeEditorModal.style.display = 'none';
+        }
+        if (event.target == logoutModal) {
+            logoutModal.style.display = 'none';
+        }
+        if (event.target == document.getElementById('notificationModal')) {
+            document.getElementById('notificationModal').style.display = 'none';
+        }
+    };
 
-        function populateNotificationSchedules() {
-            const select = document.getElementById('notifyScheduleSelect');
-            select.innerHTML = '<option value="">-- اختر منطقة التوزيع --</option>';
+    areaEditorSelect.onchange = () => {
+        const id = areaEditorSelect.value;
+        if (!id) return;
+        const area = areas.find(a => a.id == id);
 
-            schedules.forEach(sch => {
-                const area = areas.find(a => a.id === sch.areaId);
-                const emp = employees.find(e => e.id === sch.employeeId);
+        if (area) {
+            areaEditorName.value = area.name;
+            areaEditorDesc.value = area.description || '';
+            populateAreaEditorEmployees(Number(id));
+        }
+    };
+
+    document.getElementById('saveAreaEditBtn').onclick = () => {
+        const id = areaEditorSelect.value;
+        if (!id) return showToast('يرجى اختيار منطقة', 'danger');
+
+        const name = areaEditorName.value.trim();
+        const desc = areaEditorDesc.value.trim();
+        const selectedEmployeeId = Number(areaEditorEmployee.value);
+
+        if (!name) return showToast('يرجى إدخال اسم المنطقة', 'danger');
+
+        const areaIndex = areas.findIndex(a => a.id == id);
+
+        if (areaIndex !== -1) {
+            areas[areaIndex].name = name;
+            areas[areaIndex].description = desc;
+
+            schedules = schedules.filter(s => s.areaId != id);
+
+            if (selectedEmployeeId) {
+                schedules.push({
+                    id: Date.now(),
+                    areaId: Number(id),
+                    employeeId: selectedEmployeeId,
+                    date: '',
+                    startTime: '',
+                    duration: 4,
+                    status: 'pending'
+                });
+            }
+
+            persistAll();
+            updateUI();
+            showToast('تم تحديث المنطقة بنجاح');
+            areaEditorModal.style.display = 'none';
+        }
+    };
+
+    document.getElementById('deleteAreaBtn').onclick = () => {
+        const id = areaEditorSelect.value;
+        if (!id) return showToast('يرجى اختيار منطقة', 'danger');
+
+        if (confirm('هل أنت متأكد من حذف هذه المنطقة؟ سيتم حذف جميع الجداول المرتبطة بها.')) {
+            areas = areas.filter(a => a.id != id);
+            schedules = schedules.filter(s => s.areaId != id);
+            persistAll();
+            updateUI();
+            showToast('تم حذف المنطقة بنجاح');
+            areaEditorModal.style.display = 'none';
+        }
+    };
+
+    const employeeEditorModal = document.getElementById('employeeEditorModal');
+    const employeeEditorName = document.getElementById('employeeEditorName');
+    const employeeEditorPhone = document.getElementById('employeeEditorPhone');
+    const employeeEditorId = document.getElementById('employeeEditorId');
+
+    window.openEmployeeEditor = (id) => {
+        const emp = employees.find(e => e.id === id);
+        if (!emp) return;
+        employeeEditorId.value = emp.id;
+        employeeEditorName.value = emp.name;
+        employeeEditorPhone.value = emp.phone;
+        employeeEditorModal.style.display = 'flex';
+    };
+
+    document.getElementById('closeEmployeeEditorModal').onclick = () => {
+        employeeEditorModal.style.display = 'none';
+    };
+
+    document.getElementById('saveEmployeeEditBtn').onclick = () => {
+        const id = Number(employeeEditorId.value);
+        const name = employeeEditorName.value.trim();
+        const phone = employeeEditorPhone.value.trim();
+
+        if (!name || !phone) return showToast('يرجى ملء جميع الحقول', 'danger');
+
+        const index = employees.findIndex(e => e.id === id);
+
+        if (index !== -1) {
+            employees[index].name = name;
+            employees[index].phone = phone;
+            persistAll();
+            updateUI();
+
+            showToast('تم تحديث بيانات الموظف');
+            employeeEditorModal.style.display = 'none';
+        }
+    };
+
+    document.getElementById('deleteEmployeeBtn').onclick = () => {
+        const id = Number(employeeEditorId.value);
+
+        if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
+            employees = employees.filter(e => e.id !== id);
+            persistAll();
+            updateUI();
+            showToast('تم حذف الموظف');
+            employeeEditorModal.style.display = 'none';
+        }
+    };
+
+    function attachNotificationHandlers() {
+        const headerBtn = document.getElementById('headerBroadcastBtn');
+        const modal = document.getElementById('notificationModal');
+        const close = document.getElementById('closeNotificationModal');
+        const select = document.getElementById('notifyScheduleSelect');
+        const msg = document.getElementById('notificationMessage');
+        const send = document.getElementById('confirmSend');
+        const tabs = document.querySelectorAll('.nc-tab');
+        const typeRadios = document.querySelectorAll('input[name="notifType"]');
+
+        const openModal = () => {
+            modal.style.display = 'flex';
+            populateNotificationSchedules();
+            populateNotificationHistory();
+        };
+
+        if (headerBtn) headerBtn.onclick = openModal;
+        if (close) close.onclick = () => modal.style.display = 'none';
+
+        tabs.forEach(tab => {
+            tab.onclick = () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                if (tab.dataset.tab === 'new') {
+                    document.getElementById('ncTabNew').style.display = 'block';
+                    document.getElementById('ncTabHistory').style.display = 'none';
+                } else {
+                    document.getElementById('ncTabNew').style.display = 'none';
+                    document.getElementById('ncTabHistory').style.display = 'block';
+                    populateNotificationHistory();
+                }
+            };
+        });
+
+        const updateMessage = () => {
+            const scheduleId = Number(select.value);
+            const schedule = schedules.find(s => s.id === scheduleId);
+            const type = document.querySelector('input[name="notifType"]:checked').value;
+
+            document.querySelectorAll('.notif-type-card').forEach(c => c.classList.remove('selected'));
+            if (type === 'start') document.getElementById('typeStartCard').classList.add('selected');
+            else if (type === 'end') document.getElementById('typeEndCard').classList.add('selected');
+            else if (type === 'emergency')
+                document.getElementById('typeEmergencyCard').classList.add('selected');
+
+            if (schedule) {
+                const area = areas.find(a => a.id === schedule.areaId);
 
                 if (area) {
-                    const opt = document.createElement('option');
-                    opt.value = sch.id;
-                    opt.textContent = `${area.name} - ${sch.date || ''} (${emp ? emp.name : 'غير محدد'})`;
-                    select.appendChild(opt);
+                    if (type === 'start') {
+                        // Convert 24h time to 12h time
+                        let timeDisplay = schedule.startTime || 'الآن';
+                        if (timeDisplay !== 'الآن') {
+                            try {
+                                const [hours, minutes] = timeDisplay.split(':');
+                                const date = new Date();
+                                date.setHours(hours);
+                                date.setMinutes(minutes);
+                                timeDisplay = date.toLocaleTimeString('en-US', {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true
+                                });
+                            } catch (e) { }
+                        }
+                        msg.value = `تنويه: بدء توزيع المياه في ${area.name}\n\nوقت البدء: ${timeDisplay}\n\nمدة
+                    التجهيز:
+                    ${schedule.duration} ساعة`;
+                    } else if (type === 'end') {
+                        msg.value = `تنويه: انتهاء توزيع المياه في ${area.name}\n\nشكراً لتعاونكم.`;
+                    } else {
+                        msg.value = `تنويه هام: توقف ضخ المياه في ${area.name}\n\nبسبب أعمال صيانة طارئة.\nنعتذر عن
+                    الإزعاج.`;
+                    }
                 }
-            });
-        }
-
-        function populateNotificationHistory() {
-            const list = document.getElementById('notificationHistoryList');
-            const raw = localStorage.getItem('waterNotifications');
-            let notifs = raw ? JSON.parse(raw) : [];
-
-            const now = Date.now();
-            const validNotifs = notifs.filter(n => !n.expiresAt || n.expiresAt > now);
-
-            if (validNotifs.length !== notifs.length) {
-                localStorage.setItem('waterNotifications', JSON.stringify(validNotifs));
-                notifs = validNotifs;
+            } else {
+                if (type === 'emergency') {
+                    msg.value = `تنويه هام: توقف ضخ المياه بسبب أعمال صيانة طارئة أو انقطاع التيار
+                    الكهربائي.\nنعتذر عن
+                    الإزعاج.`;
+                } else {
+                    msg.value = '';
+                }
             }
+        };
 
-            if (notifs.length === 0) {
-                list.innerHTML = '<p style="text-align:center;color:#999;">لا يوجد سجل إشعارات</p>';
+        if (select) select.onchange = updateMessage;
+        typeRadios.forEach(radio => radio.onchange = updateMessage);
+
+        if (send) send.onclick = async () => {
+            if (!msg.value.trim()) {
+                showToast('الرجاء إدخال نص الإشعار', 'danger');
                 return;
             }
 
-            list.innerHTML = '';
+            const durationHours = Number(document.getElementById('notificationDuration').value) || 24;
+            const expiresAt = Date.now() + (durationHours * 60 * 60 * 1000);
 
-            notifs.slice().reverse().forEach(n => {
-                const dateObj = new Date(n.timestamp);
-                const dateStr = dateObj.toLocaleDateString('en-GB');
-                const timeStr = dateObj.toLocaleTimeString('en-US', {
+            const notification = {
+                id: Date.now(),
+                message: msg.value,
+                timestamp: new Date().getTime(),
+                expiresAt: expiresAt
+            };
+
+            // 1. Save locally first
+            try {
+                const raw = localStorage.getItem('waterNotifications');
+                const notifs = raw ? JSON.parse(raw) : [];
+                notifs.push(notification);
+                localStorage.setItem('waterNotifications', JSON.stringify(notifs));
+
+                modal.style.display = 'none';
+                msg.value = '';
+            } catch (e) {
+                console.error("Local save error:", e);
+                showToast('حدث خطأ في الحفظ المحلي', 'danger');
+                return;
+            }
+
+            // 2. Try network broadcast in background
+            if (typeof broadcastNotification === 'function') {
+                broadcastNotification(notification).then(() => {
+                    console.log("Broadcast success");
+                    showToast('تم تعميم الإشعار بنجاح');
+                }).catch(err => {
+                    console.error("Broadcast failed:", err);
+                    showToast('تم الحفظ محلياً فقط (فشل الاتصال)', 'warning');
+                });
+            }
+
+            if (window.opener && window.opener.checkForNotifications) {
+                try {
+                    window.opener.checkForNotifications();
+                } catch (e) { }
+            }
+        };
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+
+    function populateNotificationSchedules() {
+        const select = document.getElementById('notifyScheduleSelect');
+        select.innerHTML = '<option value="">-- اختر منطقة التوزيع --</option>';
+
+        schedules.forEach(sch => {
+            const area = areas.find(a => a.id === sch.areaId);
+            const emp = employees.find(e => e.id === sch.employeeId);
+
+            if (area) {
+                const opt = document.createElement('option');
+                opt.value = sch.id;
+                opt.textContent = `${area.name} - ${sch.date || ''} (${emp ? emp.name : 'غير محدد'})`;
+                select.appendChild(opt);
+            }
+        });
+    }
+
+    function populateNotificationHistory() {
+        const list = document.getElementById('notificationHistoryList');
+        const raw = localStorage.getItem('waterNotifications');
+        let notifs = raw ? JSON.parse(raw) : [];
+
+        const now = Date.now();
+        const validNotifs = notifs.filter(n => !n.expiresAt || n.expiresAt > now);
+
+        if (validNotifs.length !== notifs.length) {
+            localStorage.setItem('waterNotifications', JSON.stringify(validNotifs));
+            notifs = validNotifs;
+        }
+
+        if (notifs.length === 0) {
+            list.innerHTML = '<p style="text-align:center;color:#999;">لا يوجد سجل إشعارات</p>';
+            return;
+        }
+
+        list.innerHTML = '';
+
+        notifs.slice().reverse().forEach(n => {
+            const dateObj = new Date(n.timestamp);
+            const dateStr = dateObj.toLocaleDateString('en-GB');
+            const timeStr = dateObj.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            const date = `${dateStr} ${timeStr}`;
+
+            let expiryText = '';
+            if (n.expiresAt) {
+                const expObj = new Date(n.expiresAt);
+                const expDateStr = expObj.toLocaleDateString('en-GB');
+                const expTimeStr = expObj.toLocaleTimeString('en-US', {
                     hour: 'numeric',
                     minute: '2-digit',
                     hour12: true
                 });
-                const date = `${dateStr} ${timeStr}`;
-
-                let expiryText = '';
-                if (n.expiresAt) {
-                    const expObj = new Date(n.expiresAt);
-                    const expDateStr = expObj.toLocaleDateString('en-GB');
-                    const expTimeStr = expObj.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-                    expiryText = `<div style="font-size:0.75rem;color:#94a3b8;margin-top:5px;">
+                expiryText = `<div style="font-size:0.75rem;color:#94a3b8;margin-top:5px;">
                         <i class="fas fa-hourglass-end"></i> ينتهي في: ${expDateStr} ${expTimeStr}
                     </div>`;
-                }
+            }
 
-                const item = document.createElement('div');
-                item.className = 'nc-history-item';
+            const item = document.createElement('div');
+            item.className = 'nc-history-item';
 
-                item.innerHTML = `
+            item.innerHTML = `
                     <div class="nc-history-header"
                         style="display:flex;justify-content:space-between;align-items:center;">
                         <span><i class="far fa-clock"></i> ${date}</span>
@@ -1470,62 +1454,62 @@
                         ${expiryText}
                     </div>
                     `;
-                list.appendChild(item);
-            });
-        }
+            list.appendChild(item);
+        });
+    }
 
-        window.deleteNotification = function (id) {
-            if (!confirm('هل أنت متأكد من حذف هذا الإشعار؟')) return;
+    window.deleteNotification = function (id) {
+        if (!confirm('هل أنت متأكد من حذف هذا الإشعار؟')) return;
 
-            const raw = localStorage.getItem('waterNotifications');
-            let notifs = raw ? JSON.parse(raw) : [];
-            notifs = notifs.filter(n => n.id != id);
-            localStorage.setItem('waterNotifications', JSON.stringify(notifs));
+        const raw = localStorage.getItem('waterNotifications');
+        let notifs = raw ? JSON.parse(raw) : [];
+        notifs = notifs.filter(n => n.id != id);
+        localStorage.setItem('waterNotifications', JSON.stringify(notifs));
 
-            populateNotificationHistory();
-            showToast('تم حذف الإشعار بنجاح');
-        };
+        populateNotificationHistory();
+        showToast('تم حذف الإشعار بنجاح');
+    };
 
-        // Logout Logic
-        const logoutModal = document.getElementById('logoutModal');
-        const managerBackBtn = document.getElementById('managerBackBtn');
-        const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
-        const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+    // Logout Logic
+    const logoutModal = document.getElementById('logoutModal');
+    const managerBackBtn = document.getElementById('managerBackBtn');
+    const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+    const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
 
-        if (managerBackBtn) {
-            managerBackBtn.addEventListener('click', () => {
-                logoutModal.style.display = 'flex';
-            });
-        }
+    if (managerBackBtn) {
+        managerBackBtn.addEventListener('click', () => {
+            logoutModal.style.display = 'flex';
+        });
+    }
 
-        if (cancelLogoutBtn) {
-            cancelLogoutBtn.addEventListener('click', () => {
-                logoutModal.style.display = 'none';
-            });
-        }
+    if (cancelLogoutBtn) {
+        cancelLogoutBtn.addEventListener('click', () => {
+            logoutModal.style.display = 'none';
+        });
+    }
 
-        if (confirmLogoutBtn) {
-            confirmLogoutBtn.addEventListener('click', () => {
-                if (window.opener) {
-                    window.close();
-                } else {
-                    window.location.href = 'index.html';
-                }
-            });
-        }
-
-        window.addEventListener('click', (e) => {
-            if (e.target === logoutModal) {
-                logoutModal.style.display = 'none';
+    if (confirmLogoutBtn) {
+        confirmLogoutBtn.addEventListener('click', () => {
+            if (window.opener) {
+                window.close();
+            } else {
+                window.location.href = 'index.html';
             }
         });
+    }
 
-        document.getElementById('employeeSearch').addEventListener('input', updateEmployeeList);
+    window.addEventListener('click', (e) => {
+        if (e.target === logoutModal) {
+            logoutModal.style.display = 'none';
+        }
+    });
 
-        loadData(); // Render initial state from local storage
-        startRealtimeSync(updateUI); // Start listening for updates
-        attachNotificationHandlers();
-    </script>
-    </body>
+    document.getElementById('employeeSearch').addEventListener('input', updateEmployeeList);
+
+    loadData(); // Render initial state from local storage
+    startRealtimeSync(updateUI); // Start listening for updates
+    attachNotificationHandlers();
+</script>
+</body>
 
 </html>
