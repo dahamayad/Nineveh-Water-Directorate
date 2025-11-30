@@ -1,0 +1,70 @@
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content" style="max-width: 420px; text-align: center; padding: 35px;">
+            <div style="margin-bottom: 25px;">
+                <i class="fas fa-sign-out-alt" style="font-size: 4.5rem; color: var(--primary); opacity: 0.9; animation: pulse 2s infinite;"></i>
+            </div>
+            <h3 style="margin-bottom: 15px; font-size: 1.6rem; color: white;">تأكيد المغادرة</h3>
+            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 1.05rem; line-height: 1.6;">
+                هل أنت متأكد من رغبتك في الرجوع للشاشة الرئيسية؟<br>
+                <span style="font-size: 0.9rem; opacity: 0.8;">سيتم حفظ جميع التغييرات تلقائياً</span>
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button id="confirmLogoutBtn" class="btn btn-primary" style="width: auto; min-width: 130px; padding: 14px 24px;">
+                    <i class="fas fa-check-circle"></i> نعم، الرجوع
+                </button>
+                <button id="cancelLogoutBtn" class="btn btn-secondary" style="width: auto; min-width: 130px; padding: 14px 24px;">
+                    <i class="fas fa-times-circle"></i> إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+
+    <script>
+        // Logout Modal Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const managerBackBtn = document.getElementById('managerBackBtn');
+            const logoutModal = document.getElementById('logoutModal');
+            const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+            const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+
+            if (managerBackBtn) {
+                managerBackBtn.addEventListener('click', () => {
+                    logoutModal.style.display = 'flex';
+                });
+            }
+
+            if (cancelLogoutBtn) {
+                cancelLogoutBtn.addEventListener('click', () => {
+                    logoutModal.style.display = 'none';
+                });
+            }
+
+            if (confirmLogoutBtn) {
+                confirmLogoutBtn.addEventListener('click', () => {
+                    if (window.opener) {
+                        window.close();
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+
+            // Close logout modal when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === logoutModal) {
+                    logoutModal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

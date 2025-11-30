@@ -1,0 +1,748 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ظ„ظˆط­ط© طھط­ظƒظ… ط§ظ„ظ…ط¯ظٹط±</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        /* Copied and adapted styles from index.html */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4facfe;
+            --secondary: #00f2fe;
+            --accent: #ff0080;
+            --dark-bg: #0f172a;
+            /* Solid background for popup */
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --success: #00e676;
+            --warning: #ffea00;
+            --danger: #ff1744;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            height: 100vh;
+            overflow-y: auto;
+            direction: rtl;
+            padding: 20px;
+        }
+
+        /* Responsive Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0;
+            width: 100%;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Form Styles */
+        .controls h3,
+        .schedules-list h4 {
+            color: var(--secondary);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            display: block;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            border-radius: 8px;
+            padding: 12px;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        select option {
+            background-color: #1e293b;
+            color: white;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #2980b9);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #00b894);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #ff5252);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            width: auto;
+            margin-bottom: 0;
+        }
+
+        /* Stats */
+        .quick-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        /* Lists */
+        .schedule-item {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.1), rgba(0, 242, 254, 0.05));
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-right: 4px solid var(--primary);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .schedule-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(79, 172, 254, 0.2);
+        }
+
+        .schedule-item.completed {
+            border-right-color: var(--success);
+        }
+
+        .schedule-item.in-progress {
+            border-right-color: var(--warning);
+        }
+
+        .schedule-item.pending {
+            border-right-color: var(--danger);
+        }
+
+        /* Toast */
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            z-index: 4000;
+            animation: slideIn 0.3s ease;
+            max-width: 90%;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #1e293b;
+            padding: 25px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            border: 1px solid var(--glass-border);
+            color: white;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            position: absolute;
+            left: 20px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: white;
+        }
+
+        /* Layout Classes */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            align-items: start;
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        .schedules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        /* Notification Bell */
+        .btn-bell {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .btn-bell:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* Notification Modal Styles */
+        .notification-center {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .nc-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--secondary);
+        }
+
+        .nc-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .nc-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            color: var(--text-muted);
+        }
+
+        .nc-tab.active {
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+        }
+
+        .notif-type-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .notif-type-card {
+            flex: 1;
+            min-width: 100px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notif-type-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .notif-type-card input {
+            display: none;
+        }
+
+        .notif-type-card i {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        /* Specific styles for Start Distribution (Blue) */
+        #typeStartCard.selected {
+            background: rgba(79, 172, 254, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.3);
+        }
+
+        #typeStartCard.selected i {
+            color: var(--primary);
+        }
+
+        /* Specific styles for End Distribution (Red) */
+        #typeEndCard.selected {
+            background: rgba(255, 23, 68, 0.2);
+            border-color: var(--danger);
+            box-shadow: 0 0 15px rgba(255, 23, 68, 0.3);
+        }
+
+        #typeEndCard.selected i {
+            color: var(--danger);
+        }
+
+        /* Specific styles for Emergency (Red/Orange) */
+        #typeEmergencyCard.selected {
+            background: rgba(255, 82, 82, 0.2);
+            border-color: var(--danger);
+            box-shadow: 0 0 15px rgba(255, 82, 82, 0.3);
+        }
+
+        .nc-history-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-right: 3px solid var(--text-muted);
+        }
+
+        .nc-history-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .nc-history-body {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .btn-delete-notif {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        /* RESPONSIVE MEDIA QUERIES */
+        @media (max-width: 1024px) {
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                margin-top: 20px;
+            }
+
+            .dashboard-content {
+                grid-template-columns: 1fr;
+            }
+
+            .schedules-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-stats {
+                gap: 10px;
+            }
+
+            .stat-item {
+                padding: 10px;
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            .controls h3,
+            .schedules-list h4 {
+                font-size: 1rem;
+            }
+
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .user-info {
+                width: 100%;
+                justify-content: flex-end;
+                margin-top: 10px;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .quick-stats {
+                flex-direction: row;
+                /* Keep stats in row but maybe wrap */
+            }
+
+            .stat-item {
+                min-width: 45%;
+                /* 2 per row on very small screens */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1><i class="fas fa-user-tie"></i> ظ„ظˆط­ط© طھط­ظƒظ… ط§ظ„ظ…ط¯ظٹط±</h1>
+        <div class="user-info">
+            <button id="headerBroadcastBtn" class="btn-bell" title="ط¥ط±ط³ط§ظ„ ط¥ط´ط¹ط§ط±">
+                <i class="fas fa-bell"></i>
+            </button>
+            <button id="managerBackBtn" class="logout-btn btn btn-small btn-danger" style="margin:0; width:auto;">
+                <i class="fas fa-arrow-right"></i> ط±ط¬ظˆط¹
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="quick-stats">
+            <div class="stat-item">
+                <span id="totalEmployees" class="stat-number">0</span>
+                <span>ط§ظ„ظ…ظˆط¸ظپظٹظ†</span>
+            </div>
+            <div class="stat-item">
+                <span id="totalAreas" class="stat-number">0</span>
+                <span>ط§ظ„ظ…ظ†ط§ط·ظ‚</span>
+            </div>
+            <div class="stat-item">
+                <span id="totalSchedules" class="stat-number">0</span>
+                <span>ط§ظ„ط¬ط¯ط§ظˆظ„</span>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="controls">
+                <h3><i class="fas fa-user-plus"></i> ط¥ط¶ط§ظپط© ظ…ظˆط¸ظپ</h3>
+                <div class="form-group">
+                    <label>ط§ط³ظ… ط§ظ„ظ…ظˆط¸ظپ</label>
+                    <input type="text" id="employeeName" placeholder="ط§ظ„ط§ط³ظ… ط§ظ„ظƒط§ظ…ظ„">
+                </div>
+                <div class="form-group">
+                    <label>ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ</label>
+                    <input type="tel" id="employeePhone" placeholder="05xxxxxxxx">
+                </div>
+                <button id="addEmployee" class="btn btn-primary"><i class="fas fa-plus"></i> ط¥ط¶ط§ظپط©</button>
+            </div>
+
+            <div class="controls">
+                <h3><i class="fas fa-map-marker-alt"></i> ط¥ط¶ط§ظپط© ظ…ظ†ط·ظ‚ط©</h3>
+                <div class="form-group">
+                    <label>ط§ط³ظ… ط§ظ„ظ…ظ†ط·ظ‚ط©</label>
+                    <input type="text" id="areaName" placeholder="ظ…ط«ط§ظ„: ط­ظٹ ط§ظ„ط²ظ‡ظˆط±">
+                </div>
+                <div class="form-group">
+                    <label>ط§ظ„ظˆطµظپ</label>
+                    <input type="text" id="areaDescription" placeholder="ظˆطµظپ ظ…ط®طھطµط±">
+                </div>
+                <div class="form-group" style="display:flex; gap:10px;">
+                    <input type="text" id="areaCoordX" placeholder="X" readonly style="width:50%">
+                    <input type="text" id="areaCoordY" placeholder="Y" readonly style="width:50%">
+                </div>
+                <button id="openDrawAreaBtn" class="btn btn-secondary" style="margin-bottom:10px;"><i
+                        class="fas fa-map"></i> طھط­ط¯ظٹط¯ ظ…ظ† ط§ظ„ط®ط±ظٹط·ط©</button>
+                <button id="addArea" class="btn btn-primary"><i class="fas fa-plus"></i> ط¥ط¶ط§ظپط© ط§ظ„ظ…ظ†ط·ظ‚ط©</button>
+            </div>
+
+            <div class="controls">
+                <h3><i class="fas fa-calendar-plus"></i> طھط¹ظٹظٹظ† ط¬ط¯ظˆظ„</h3>
+                <div class="form-group">
+                    <label>ط§ظ„ظ…ظ†ط·ظ‚ط©</label>
+                    <select id="scheduleArea">
+                        <option value="">ط§ط®طھط± ط§ظ„ظ…ظ†ط·ظ‚ط©</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ط§ظ„ظ…ظˆط¸ظپ ط§ظ„ظ…ط³ط¤ظˆظ„</label>
+                    <select id="scheduleEmployee">
+                        <option value="">ط§ط®طھط± ط§ظ„ظ…ظˆط¸ظپ</option>
+                    </select>
+                </div>
+                <button id="addSchedule" class="btn btn-success"><i class="fas fa-check"></i> طھط¹ظٹظٹظ†</button>
+                <button id="openAreaEditorBtn" class="btn btn-secondary" style="margin-top:10px;"><i
+                        class="fas fa-edit"></i> طھط¹ط¯ظٹظ„ ط§ظ„ظ…ظ†ط§ط·ظ‚</button>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="schedules-list">
+                <h4><i class="fas fa-users"></i> ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ظˆط¸ظپظٹظ†</h4>
+                <div class="form-group">
+                    <input type="text" id="employeeSearch" placeholder="ط¨ط­ط« ط¹ظ† ظ…ظˆط¸ظپ...">
+                </div>
+                <div id="employeesContainer" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="schedules-list">
+                <h4><i class="fas fa-tasks"></i> ط¬ط¯ط§ظˆظ„ ط§ظ„طھظˆط²ظٹط¹ ط§ظ„ط­ط§ظ„ظٹط©</h4>
+                <div id="managerSchedulesContainer" class="schedules-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="areaEditorModal" class="modal">
+        <div class="modal-content">
+            <span id="closeAreaEditorModal" class="close">&times;</span>
+            <h3>طھط¹ط¯ظٹظ„ ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ظ†ط·ظ‚ط©</h3>
+            <div class="form-group">
+                <label>ط§ط®طھط± ط§ظ„ظ…ظ†ط·ظ‚ط©</label>
+                <select id="areaEditorSelect"></select>
+            </div>
+            <div class="form-group">
+                <label>ط§ط³ظ… ط§ظ„ظ…ظ†ط·ظ‚ط©</label>
+                <input type="text" id="areaEditorName">
+            </div>
+            <div class="form-group">
+                <label>ط§ظ„ظˆطµظپ</label>
+                <textarea id="areaEditorDesc" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>طھط؛ظٹظٹط± ط§ظ„ظ…ظˆط¸ظپ ط§ظ„ظ…ط³ط¤ظˆظ„</label>
+                <select id="areaEditorEmployee"></select>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button id="saveAreaEditBtn" class="btn btn-primary">ط­ظپط¸ ط§ظ„طھط؛ظٹظٹط±ط§طھ</button>
+                <button id="deleteAreaBtn" class="btn btn-danger">ط­ط°ظپ ط§ظ„ظ…ظ†ط·ظ‚ط©</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="employeeEditorModal" class="modal">
+        <div class="modal-content">
+            <span id="closeEmployeeEditorModal" class="close">&times;</span>
+            <h3>طھط¹ط¯ظٹظ„ ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ظˆط¸ظپ</h3>
+            <input type="hidden" id="employeeEditorId">
+            <div class="form-group">
+                <label>ط§ظ„ط§ط³ظ…</label>
+                <input type="text" id="employeeEditorName">
+            </div>
+            <div class="form-group">
+                <label>ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ</label>
+                <input type="text" id="employeeEditorPhone">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button id="saveEmployeeEditBtn" class="btn btn-primary">ط­ظپط¸ ط§ظ„طھط؛ظٹظٹط±ط§طھ</button>
+                <button id="deleteEmployeeBtn" class="btn btn-danger">ط­ط°ظپ ط§ظ„ظ…ظˆط¸ظپ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span id="closeNotificationModal" class="close">&times;</span>
+            <div class="notification-center">
+                <div class="nc-header">
+                    <h3><i class="fas fa-broadcast-tower"></i> ظ…ط±ظƒط² ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ</h3>
+                </div>
+                <div class="nc-tabs">
+                    <div class="nc-tab active" data-tab="new">ط¥ط´ط¹ط§ط± ط¬ط¯ظٹط¯</div>
+                    <div class="nc-tab" data-tab="history">ط³ط¬ظ„ ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ</div>
+                </div>
+                <div id="ncTabNew">
+                    <div class="notif-type-group">
+                        <label class="notif-type-card" id="typeStartCard">
+                            <input type="radio" name="notifType" value="start" checked>
+                            <i class="fas fa-play-circle"></i>
+                            <span>ط¨ط¯ط، ط§ظ„طھظˆط²ظٹط¹</span>
+                        </label>
+                        <label class="notif-type-card" id="typeEndCard">
+                            <input type="radio" name="notifType" value="end">
+                            <i class="fas fa-stop-circle"></i>
+                            <span>ط§ظ†طھظ‡ط§ط، ط§ظ„طھظˆط²ظٹط¹</span>
+                        </label>
+                        <label class="notif-type-card" id="typeEmergencyCard">
+                            <input type="radio" name="notifType" value="emergency">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>ط·ط§ط±ط¦</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>ط§ظ„ظ…ظ†ط·ظ‚ط© ط§ظ„ظ…ط³طھظ‡ط¯ظپط©</label>
+                        <select id="notifyScheduleSelect">
+                            <option value="">-- ط§ط®طھط± ظ…ظ†ط·ظ‚ط© ط§ظ„طھظˆط²ظٹط¹ --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>ظ†طµ ط§ظ„ط¥ط´ط¹ط§ط±</label>
+                        <textarea id="notificationMessage" rows="4"
+                            placeholder="ط³ظٹطھظ… طھظˆظ„ظٹط¯ ط§ظ„ظ†طµ طھظ„ظ‚ط§ط¦ظٹط§ظ‹..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>ظ…ط¯ط© ط§ظ„ط¹ط±ط¶ (ط³ط§ط¹ط§طھ)</label>
+                        <input type="number" id="notificationDuration" value="24" min="1" max="72">
+                    </div>
+                    <button id="confirmSend" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> ط¥ط±ط³ط§ظ„ ط§ظ„ط¥ط´ط¹ط§ط±
+                    </button>

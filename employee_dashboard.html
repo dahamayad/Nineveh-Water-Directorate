@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الموظف</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4facfe;
+            --secondary: #00f2fe;
+            --accent: #ff0080;
+            --dark-bg: #0f172a;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --success: #00e676;
+            --warning: #ffea00;
+            --danger: #ff1744;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            height: 100vh;
+            overflow-y: auto;
+            direction: rtl;
+            padding: 20px;
+        }
+
+        .controls h3,
+        .schedules-list h4 {
+            color: var(--secondary);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            display: block;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            border-radius: 8px;
+            padding: 12px;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        select option {
+            background-color: #1e293b;
+            color: white;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #2980b9);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #00b894);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            width: auto;
+        }
+
+        .quick-stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .schedule-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-right: 4px solid var(--primary);
+        }
+
+        .schedule-item.completed {
+            border-right-color: var(--success);
+        }
+
+        .schedule-item.in-progress {
+            border-right-color: var(--warning);
+        }
+
+        .schedule-item.pending {
+            border-right-color: var(--danger);
+        }
+
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            z-index: 4000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        #employeeSchedulesContainer {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            #employeeSchedulesContainer {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Notification Bell */
+        .btn-bell {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .btn-bell:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .bell-pulse {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--warning);
+            opacity: 0;
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        /* Notification Modal Styles */
+        .notification-center {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .nc-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--secondary);
+        }
+
+        .nc-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .nc-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            color: var(--text-muted);
+        }
+
+        .nc-tab.active {
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+        }
+
+        .notif-type-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .notif-type-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notif-type-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .notif-type-card input {
+            display: none;
+        }
+
+        .notif-type-card i {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        /* Specific styles for Start Distribution (Blue) */
+        #typeStartCard.selected {
+            background: rgba(79, 172, 254, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.3);
+        }
+
+        #typeStartCard.selected i {
+            color: var(--primary);
+        }
+
+        /* Specific styles for End Distribution (Red) */
+        #typeEndCard.selected {
+            background: rgba(255, 23, 68, 0.2);
+            border-color: var(--danger);
+            box-shadow: 0 0 15px rgba(255, 23, 68, 0.3);
+        }
+
+        #typeEndCard.selected i {
+            color: var(--danger);
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .checkbox-pill {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s;
+        }
+
+        .checkbox-pill:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .checkbox-pill input {
+            width: auto;
+            margin: 0;
+        }
+
+        /* Specific styles for Emergency (Red/Orange) */
+        #typeEmergencyCard.selected {
+            background: rgba(255, 82, 82, 0.2);
+            border-color: var(--danger);
+            box-shadow: 0 0 15px rgba(255, 82, 82, 0.3);
+        }
+
+        .nc-history-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-right: 3px solid var(--text-muted);
+        }
+
+        .nc-history-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .nc-history-body {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #1e293b;
+            padding: 30px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            border: 1px solid var(--glass-border);
+            color: white;
+        }
+
+        .close {
+            position: absolute;
+            left: 20px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: white;
+        }
+
+        .schedule-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .schedule-details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-number {
+                font-size: 1.2rem;
+            }
+
+            .quick-stats {
+                flex-wrap: wrap;
+            }
+
+            .stat-item {
+                min-width: 30%;
+            }
+        }
+    </style>
+    <!-- Firebase SDK (v8.10.1) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+
+    <!-- Firebase Config & Service -->
+    <script src="firebase_config.js"></script>
+    <script src="firebase_service.js"></script>
+</head>
+
+<body>
+    <div class="controls">
+        <div
+            style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;border-bottom:1px solid var(--glass-border);padding-bottom:10px;">
+            <h3 style="margin:0;border:none;"><i class="fas fa-user-cog"></i> لوحة تحكم الموظف</h3>
+            <button id="headerBroadcastBtn" class="btn-bell" title="مركز الإشعارات"><i class="fas fa-bell"></i><span
+                    class="bell-pulse"></span></button>
+        </div>
+
+        <!-- Employee Selection Dropdown (shown when no empId in URL) -->
+        <div class="form-grid" id="employeeSelectContainer">
+            <div class="form-group">
+                <label for="employeeSelect">اختر الموظف</label>
+                <select id="employeeSelect">
+                    <option value="">اختر اسمك</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Employee Name Display (shown when empId is in URL) -->
+        <div id="employeeNameDisplay" style="display: none; margin-bottom: 20px;">
+            <div
+                style="background: rgba(79, 172, 254, 0.1); border: 1px solid rgba(79, 172, 254, 0.3); border-radius: 8px; padding: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-user-circle" style="font-size: 2rem; color: var(--primary);"></i>
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">الموظف</div>
+                        <div id="employeeNameText" style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-stats">
+            <div class="stat-item">
+                <span class="stat-number" id="totalSchedules">0</span>
+                <small>إجمالي المهام</small>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="completedSchedules">0</span>
+                <small>المكتملة</small>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="pendingSchedules">0</span>
+                <small>قيد الانتظار</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="schedules-list" style="margin-top: 20px;">
+        <h4><i class="fas fa-calendar-alt"></i> جداولي</h4>
+        <div id="employeeSchedulesContainer"></div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div id="notificationModal" class="modal">
+        <div class="modal-content">
+            <div class="notification-center">
+                <div class="nc-header">
+                    <h3><i class="fas fa-bell"></i> مركز الإشعارات</h3>
+                    <span class="close" id="closeNotificationModal" style="color:white;opacity:0.8;">&times;</span>
+                </div>
+                <div class="nc-body">
+                    <div class="nc-tabs">
+                        <div class="nc-tab active" data-tab="new">إشعار جديد</div>
+                        <div class="nc-tab" data-tab="history">السجل</div>
+                    </div>
+
+                    <div id="ncTabNew">
+                        <!-- Notification Type Cards -->
+                        <div class="notif-type-group">
+                            <label class="notif-type-card selected" id="typeStartCard">
+                                <input type="radio" name="notifType" value="start" checked>
+                                <i class="fas fa-faucet"></i>
+                                <span>بدء التوزيع</span>
+                            </label>
+                            <label class="notif-type-card" id="typeEndCard">
+                                <input type="radio" name="notifType" value="end">
+                                <i class="fas fa-tint-slash"></i>
+                                <span>انتهاء التوزيع</span>
+                            </label>
+                            <label class="notif-type-card" id="typeEmergencyCard">
+                                <input type="radio" name="notifType" value="emergency">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>رسالة طوارئ</span>
+                            </label>
+                        </div>
+
+                        <div class="form-grid" style="grid-template-columns: 1fr;">
+                            <div class="form-group">
+                                <label for="notifyScheduleSelect">اختر المنطقة / الجدول</label>
+                                <select id="notifyScheduleSelect">
+                                    <option value="">-- اختر منطقة التوزيع --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="notificationMessage">نص الإشعار</label>
+                                <textarea id="notificationMessage" rows="3"
+                                    placeholder="سيتم توليد النص تلقائياً..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>قنوات الإرسال</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-pill">
+                                        <input type="checkbox" id="sendSMS" checked>
+                                        <i class="fas fa-sms"></i> رسالة SMS
+                                    </label>
+                                    <label class="checkbox-pill">
+                                        <input type="checkbox" id="sendPush" checked>
+                                        <i class="fas fa-mobile-alt"></i> إشعار تطبيق
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button id="confirmSend" class="btn btn-primary"
+                                style="width:100%; padding:15px; font-size:1.1rem; margin-top:10px;">
+                                <i class="fas fa-paper-plane"></i> إرسال الإشعار الآن
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="ncTabHistory" style="display:none; max-height:400px; overflow-y:auto;">
+                        <div id="notificationHistoryList">
+                            <!-- History items will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal" style="z-index: 3000;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <i id="confirmIcon" class="fas fa-exclamation-circle"
+                    style="font-size: 4rem; color: var(--warning); margin-bottom: 15px; display: block;"></i>
+                <h3 id="confirmTitle" style="color: white; margin-bottom: 10px;">تأكيد بدء التوزيع</h3>
+                <p id="confirmMessage" style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">
+                    هل أنت متأكد من بدء التوزيع؟<br>
+                    سيتم إرسال إشعار تلقائي للمواطنين في المنطقة المحددة.
+                </p>
+                btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+
+                const newBtnCancel = btnCancel.cloneNode(true);
+                btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+
+                newBtnCancel.onclick = () => {
+                modal.style.display = 'none';
+                };
+
+                newBtnConfirm.onclick = () => {
+                modal.style.display = 'none';
+
+                const area = areas.find(a => a.id === schedule.areaId);
+                const areaName = area ? area.name : 'المنطقة';
+                let message = '';
+
+                if (status === 'in-progress') {
+                let timeDisplay = schedule.startTime ? formatTime12Hour(schedule.startTime) : 'الآن';
+                message = `تنويه: بدء توزيع المياه في ${areaName} \n\nوقت البدء: ${timeDisplay} \n\nمدة التجهيز:
+                ${schedule.duration} ساعة`;
+                } else if (status === 'completed') {
+                message = `تنويه: انتهاء توزيع المياه في ${areaName} \n\nشكراً لتعاونكم.`;
+                }
+
+                if (message) {
+                sendNotification(message, id).then(() => {
+                @media (max-width: 480px) {
+                body {
+                padding: 10px;
+                }
+
+                .schedule-details-grid {
+                grid-template-columns: 1fr;
+                }
+
+                .stat-number {
+                font-size: 1.2rem;
+                }
+
+                .quick-stats {
+                flex-wrap: wrap;
+                }
+
+                .stat-item {
+                min-width: 30%;
+                }
+                }
+                </style>
+                </head>
+
+                <body>
+                    <div class="controls">
+                        <div
+                            style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;border-bottom:1px solid var(--glass-border);padding-bottom:10px;">
+                            <h3 style="margin:0;border:none;"><i class="fas fa-user-cog"></i> لوحة تحكم الموظف</h3>
+                            <button id="headerBroadcastBtn" class="btn-bell" title="مركز الإشعارات"><i
+                                    class="fas fa-bell"></i><span class="bell-pulse"></span></button>
+                        </div>
+
+                        <!-- Employee Selection Dropdown (shown when no empId in URL) -->
+                        <div class="form-grid" id="employeeSelectContainer">
+                            <div class="form-group">
+                                <label for="employeeSelect">اختر الموظف</label>
+                                <select id="employeeSelect">
+                                    <option value="">اختر اسمك</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Employee Name Display (shown when empId is in URL) -->
+                        <div id="employeeNameDisplay" style="display: none; margin-bottom: 20px;">
+                            <div
+                                style="background: rgba(79, 172, 254, 0.1); border: 1px solid rgba(79, 172, 254, 0.3); border-radius: 8px; padding: 15px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-user-circle" style="font-size: 2rem; color: var(--primary);"></i>
+                                    <div>
+                                        <div style="font-size: 0.85rem; color: var(--text-muted);">الموظف</div>
+                                        <div id="employeeNameText"
+                                            style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="quick-stats">
+                            <div class="stat-item">
+                                <span class="stat-number" id="totalSchedules">0</span>
+                                <small>إجمالي المهام</small>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="completedSchedules">0</span>
+                                <small>المكتملة</small>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="pendingSchedules">0</span>
+                                <small>قيد الانتظار</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="schedules-list" style="margin-top: 20px;">
+                        <h4><i class="fas fa-calendar-alt"></i> جداولي</h4>
+                        <div id="employeeSchedulesContainer"></div>
+                    </div>
+
+                    <!-- Notification Modal -->
+                    <div id="notificationModal" class="modal">
+                        <div class="modal-content">
+                            <div class="notification-center">
+                                <div class="nc-header">
+                                    <h3><i class="fas fa-bell"></i> مركز الإشعارات</h3>
+                                    <span class="close" id="closeNotificationModal"
+                                        style="color:white;opacity:0.8;">&times;</span>
+                                </div>
+                                <div class="nc-body">
+                                    <div class="nc-tabs">
+                                        <div class="nc-tab active" data-tab="new">إشعار جديد</div>
+                                        <div class="nc-tab" data-tab="history">السجل</div>
+                                    </div>
+
+                                    <div id="ncTabNew">
+                                        <!-- Notification Type Cards -->
+                                        <div class="notif-type-group">
+                                            <label class="notif-type-card selected" id="typeStartCard">
+                                                <input type="radio" name="notifType" value="start" checked>
+                                                <i class="fas fa-faucet"></i>
+                                                <span>بدء التوزيع</span>
+                                            </label>
+                                            <label class="notif-type-card" id="typeEndCard">
+                                                <input type="radio" name="notifType" value="end">
+                                                <i class="fas fa-tint-slash"></i>
+                                                <span>انتهاء التوزيع</span>
+                                            </label>
+                                            <label class="notif-type-card" id="typeEmergencyCard">
+                                                <input type="radio" name="notifType" value="emergency">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                <span>رسالة طوارئ</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="form-grid" style="grid-template-columns: 1fr;">
+                                            <div class="form-group">
+                                                <label for="notifyScheduleSelect">اختر المنطقة / الجدول</label>
+                                                <select id="notifyScheduleSelect">
+                                                    <option value="">-- اختر منطقة التوزيع --</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="notificationMessage">نص الإشعار</label>
+                                                <textarea id="notificationMessage" rows="3"
+                                                    placeholder="سيتم توليد النص تلقائياً..."></textarea>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label>قنوات الإرسال</label>
+                                                <div class="checkbox-group">
+                                                    <label class="checkbox-pill">
+                                                        <input type="checkbox" id="sendSMS" checked>
+                                                        <i class="fas fa-sms"></i> رسالة SMS
+                                                    </label>
+                                                    <label class="checkbox-pill">
+                                                        <input type="checkbox" id="sendPush" checked>
+                                                        <i class="fas fa-mobile-alt"></i> إشعار تطبيق
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <button id="confirmSend" class="btn btn-primary"
+                                                style="width:100%; padding:15px; font-size:1.1rem; margin-top:10px;">
+                                                <i class="fas fa-paper-plane"></i> إرسال الإشعار الآن
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div id="ncTabHistory" style="display:none; max-height:400px; overflow-y:auto;">
+                                        <div id="notificationHistoryList">
+                                            <!-- History items will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confirmation Modal -->
+                    <div id="confirmationModal" class="modal" style="z-index: 3000;">
+                        <div class="modal-content" style="max-width: 400px; text-align: center;">
+                            <div style="margin-bottom: 20px;">
+                                <i id="confirmIcon" class="fas fa-exclamation-circle"
+                                    style="font-size: 4rem; color: var(--warning); margin-bottom: 15px; display: block;"></i>
+                                <h3 id="confirmTitle" style="color: white; margin-bottom: 10px;">تأكيد بدء التوزيع</h3>
+                                <p id="confirmMessage"
+                                    style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">
+                                    هل أنت متأكد من بدء التوزيع؟<br>
+                                    سيتم إرسال إشعار تلقائي للمواطنين في المنطقة المحددة.
+                                </p>
+                                btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+
+                                const newBtnCancel = btnCancel.cloneNode(true);
+                                btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+
+                                newBtnCancel.onclick = () => {
+                                modal.style.display = 'none';
+                                };
+
+                                newBtnConfirm.onclick = () => {
+                                modal.style.display = 'none';
+
+                                const area = areas.find(a => a.id === schedule.areaId);
+                                const areaName = area ? area.name : 'المنطقة';
+                                let message = '';
+
+                                if (status === 'in-progress') {
+                                let timeDisplay = schedule.startTime ? formatTime12Hour(schedule.startTime) : 'الآن';
+                                message = `تنويه: بدء توزيع المياه في ${areaName} \n\nوقت البدء: ${timeDisplay} \n\nمدة
+                                التجهيز:
+                                ${schedule.duration} ساعة`;
+                                } else if (status === 'completed') {
+                                message = `تنويه: انتهاء توزيع المياه في ${areaName} \n\nشكراً لتعاونكم.`;
+                                }
+
+                                if (message) {
+                                sendNotification(message, id).then(() => {
+                                showToast('تم إرسال الإشعار التلقائي');
+                                }).catch(err => {
+                                console.error(err);
+                                showToast('فشل إرسال الإشعار التلقائي', 'warning');
+                                });
+                                }
+
+                                schedule.status = status;
+                                persistAll();
+                                updateUI();
+                                updateEmployeeStats();
+                                showToast('تم تحديث حالة الجدول بنجاح');
+                                };
+                                }
+                                }
+
+                                function showToast(msg, type = 'success') {
+                                const toast = document.createElement('div');
+                                toast.className = 'notification-toast';
+                                toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--success)';
+                                toast.textContent = msg;
+                                document.body.appendChild(toast);
+                                setTimeout(() => toast.remove(), 3000);
+                                }
+
+                                function populateNotificationSchedules() {
+                                const select = document.getElementById('notifyScheduleSelect');
+                                if (!select) return;
+                                select.innerHTML = '<option value="">-- اختر منطقة التوزيع --</option>';
+
+                                if (!currentEmployeeId) return;
+
+                                const employeeSchedules = schedules.filter(s => s.employeeId === currentEmployeeId);
+
+                                employeeSchedules.forEach(sch => {
+                                const area = areas.find(a => a.id === sch.areaId);
+                                if (area) {
+                                const opt = document.createElement('option');
+                                opt.value = sch.id;
+                                opt.textContent = `${area.name} - ${sch.date || ''}`;
+                                select.appendChild(opt);
+                                }
+                                });
+                                }
+
+                                function populateNotificationHistory() {
+                                const list = document.getElementById('notificationHistoryList');
+                                const raw = localStorage.getItem('waterNotifications');
+                                const notifs = raw ? JSON.parse(raw) : [];
+
+                                if (notifs.length === 0) {
+                                list.innerHTML = '<p style="text-align:center;color:#999;">لا يوجد سجل إشعارات</p>';
+                                return;
+                                }
+
+                                list.innerHTML = '';
+                                notifs.slice().reverse().forEach(n => {
+                                const dateObj = new Date(n.timestamp);
+                                const dateStr = dateObj.toLocaleDateString('en-GB');
+                                const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute:
+                                '2-digit', hour12: true });
+
+                                const item = document.createElement('div');
+                                item.className = 'history-item';
+                                item.innerHTML = `
+                                <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                                    <small>${dateStr} ${timeStr}</small>
+                                </div>
+                                <div>${n.message.replace(/\n/g, '<br>')}</div>
+                                `;
+                                list.appendChild(item);
+                                });
+                                }
+
+                                window.addEventListener('storage', (e) => {
+                                if (Object.values(STORAGE_KEYS).includes(e.key)) {
+                                loadData();
+                                }
+                                });
+
+                                loadData(); // Render initial state from local storage
+                                startRealtimeSync(updateUI); // Start listening for updates
+                                checkURLParams();
+                                attachNotificationHandlers();
+                                </script>
+                </body>
+
+</html>

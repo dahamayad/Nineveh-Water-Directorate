@@ -1,0 +1,4398 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة توزيع المياه (v2.1)</title>
+    <meta name="description" content="نظام متكامل لإدارة توزيع المياه والإشعارات">
+    <meta name="theme-color" content="#3498db">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <link rel="icon" href="LOG.png" type="image/png">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4facfe;
+            --secondary: #00f2fe;
+            --accent: #ff0080;
+            --dark-bg: rgba(15, 23, 42, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --success: #00e676;
+            --warning: #ffea00;
+            --danger: #ff1744;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            direction: rtl;
+        }
+
+        /* Full Screen Map */
+        .map-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            pointer-events: auto;
+            /* Enable map interaction */
+        }
+
+        #map,
+        #employeeMap,
+        #citizenMap {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        /* Floating UI Overlay */
+        .container {
+            position: relative;
+            z-index: 100;
+            pointer-events: none;
+            /* Let clicks pass through to map where no UI exists */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+            box-shadow: none;
+            max-width: none;
+            margin: 0;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            animation: fadeIn 0.6s ease;
+            margin: 0 20px;
+        }
+
+        .login-box h2 {
+            color: var(--secondary);
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+        }
+
+        .login-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .login-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: white;
+        }
+
+        .login-btn.manager {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        .login-btn.employee {
+            background: linear-gradient(135deg, var(--success), #229954);
+        }
+
+        .login-btn.citizen {
+            background: linear-gradient(135deg, var(--warning), #e67e22);
+        }
+
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-code-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 3000;
+        }
+
+        .admin-code-content {
+            background-color: white;
+            margin: 12% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            text-align: center;
+        }
+
+        .admin-code-content input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        /* Header */
+        header {
+            background: transparent;
+            border-bottom: none;
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: auto;
+            box-shadow: none;
+            position: relative;
+            /* Ensure it's positioned */
+            z-index: 100;
+            /* Ensure it's above the map */
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary);
+            background-color: rgba(15, 23, 42, 0.85);
+            padding: 8px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .logout-btn {
+            background: rgba(15, 23, 42, 0.5);
+            /* Match other buttons */
+            color: white;
+            border: 1px solid var(--glass-border);
+            padding: 8px 15px;
+            border-radius: 8px;
+            /* Match other buttons */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .logout-btn.icon-only {
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            /* Match other buttons */
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .logout-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        /* Sidebar & Panels */
+        .main-content {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            pointer-events: none;
+            /* Allow clicks to pass through to map */
+        }
+
+        .sidebar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 400px;
+            max-width: 100%;
+            max-height: calc(100vh - 120px);
+            background: var(--dark-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            overflow-y: auto;
+            pointer-events: auto;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, right 0.3s ease;
+            z-index: 1001;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1002;
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .sidebar-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .tab-content {
+            display: none;
+            height: 100%;
+            width: 100%;
+            background: transparent;
+        }
+
+        /* Citizen Interface Specifics */
+        .citizen-interface {
+            pointer-events: none;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+            /* Ensure transparent background */
+        }
+
+        .citizen-layout {
+            display: block;
+            /* Reset flex */
+        }
+
+        .citizen-layout .schedules-list {
+            position: absolute;
+            top: 80px;
+            /* Moved down to avoid header overlap */
+            right: -450px;
+            /* Hidden by default */
+            width: 380px;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            pointer-events: auto;
+            margin: 0;
+            background: var(--dark-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            z-index: 10;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .citizen-layout .schedules-list.visible {
+            right: 20px;
+        }
+
+        .hover-trigger-zone {
+            position: absolute;
+            top: 80px;
+            right: 0;
+            width: 50px;
+            /* Increased width for easier triggering */
+            height: calc(100vh - 140px);
+            z-index: 20;
+            /* High z-index to ensure it's on top */
+            background: transparent;
+            pointer-events: auto;
+            /* CRITICAL: Re-enable mouse events */
+        }
+
+        .citizen-info {
+            pointer-events: auto;
+            background: var(--dark-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 15px;
+            margin: 20px 20px 0 0;
+            width: fit-content;
+            color: white;
+            display: none;
+            /* Hide top info to clean up view, or keep small */
+        }
+
+        /* Cards & Lists */
+        .controls,
+        .schedules-list,
+        .citizen-info,
+        .schedule-card {
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+            margin-bottom: 20px;
+            color: var(--text-main);
+            border: none;
+        }
+
+        .controls h3,
+        .schedules-list h4,
+        .citizen-info h3 {
+            color: var(--secondary);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
+        }
+
+        /* Forms & Inputs */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            display: block;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            border-radius: 8px;
+            padding: 12px;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Fix for dropdown options visibility */
+        select option {
+            background-color: #1e293b;
+            color: white;
+        }
+
+        ::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #2980b9);
+            border: none;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--danger), #c0392b);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #00b894);
+            border: none;
+            color: white;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            width: auto;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .quick-stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+
+
+        #map,
+        #employeeMap,
+        #citizenMap {
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Map Controls & Legends */
+        .map-controls {
+            position: absolute;
+            top: auto;
+            bottom: 70px;
+            /* Moved up */
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            /* Vertical stack */
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .map-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(15, 23, 42, 0.5);
+            /* More transparent */
+            color: white;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            /* Slightly rounded squares like Google Earth */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            font-size: 1.2rem;
+            backdrop-filter: blur(10px);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .map-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .map-legends {
+            position: absolute;
+            bottom: 70px;
+            /* Moved up */
+            left: 80px;
+            /* Next to the zoom controls */
+            right: auto;
+            background: var(--dark-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            color: white;
+            pointer-events: auto;
+            min-width: 150px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+        }
+
+        .legend-color.completed {
+            background: var(--success);
+        }
+
+        .legend-color.in-progress {
+            background: var(--warning);
+        }
+
+        .legend-color.pending {
+            background: var(--danger);
+        }
+
+        /* Schedule Items */
+        .schedule-item,
+        .schedule-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            border-right: 4px solid var(--primary);
+        }
+
+        .schedule-item.completed {
+            border-right-color: var(--success);
+        }
+
+        .schedule-item.in-progress {
+            border-right-color: var(--warning);
+        }
+
+        .schedule-item.pending {
+            border-right-color: var(--danger);
+        }
+
+        .schedule-item:hover,
+        .schedule-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .schedule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .schedule-time {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--secondary);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            border: 1px solid var(--secondary);
+        }
+
+        .schedule-card {
+            border-right: 4(--primary);
+        }
+
+        .schedule-details {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        /* Bell Button (Updated to match Map Buttons) */
+        .btn-bell {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            /* Match map-btn radius */
+            background: rgba(15, 23, 42, 0.5);
+            /* More transparent */
+            border: 1px solid var(--glass-border);
+            /* Match map-btn border */
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            /* Match map-btn shadow */
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-bell:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.05);
+            box-shadow: none;
+            /* Reset specific shadow on hover if needed, or keep consistent */
+        }
+
+        .bell-pulse {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid #ff9800;
+            animation: pulse-ring 2s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.8);
+                opacity: 0;
+            }
+        }
+
+        /* Notification Center Modal */
+        .notification-center {
+            background: #fff;
+            border-radius: 20px;
+            overflow: hidden;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.4s ease;
+        }
+
+        .nc-header {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6) !important;
+            padding: 25px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .nc-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nc-body {
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .nc-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .nc-tab {
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #7f8c8d;
+            transition: all 0.3s;
+        }
+
+        .nc-tab.active {
+            background: #3498db;
+            color: white;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .nc-history-item {
+            background: white !important;
+            padding: 0 !important;
+            border-radius: 16px !important;
+            margin-bottom: 16px;
+            border: none !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .nc-history-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #3b82f6, #60a5fa);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .nc-history-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .nc-history-item:hover::before {
+            opacity: 1;
+        }
+
+        .nc-card-header {
+            background: #ffffff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nc-card-body {
+            padding: 20px;
+            color: #475569;
+            line-height: 1.7;
+            font-size: 0.95rem;
+            background: #fcfcfc;
+        }
+
+        .nc-history-time {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .nc-icon-wrapper {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            color: #2563eb;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.8);
+        }
+
+        .btn-delete-notif {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn-delete-notif:hover {
+            background: #fecaca;
+            transform: scale(1.1);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content,
+        .admin-code-content {
+            background-color: #1e293b;
+            padding: 30px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            border: 1px solid var(--glass-border);
+            color: white;
+        }
+
+        .close {
+            position: absolute;
+            left: 20px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: white;
+        }
+
+        .admin-code-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 3000;
+            backdrop-filter: blur(5px);
+        }
+
+        .admin-code-content {
+            margin: 12% auto;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .admin-code-content input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 5px;
+            font-size: 16px;
+            text-align: center;
+            color: white;
+        }
+
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/6/9') center/cover no-repeat;
+            padding: 20px;
+            position: relative;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        .login-box {
+            background: rgba(30, 41, 59, 0.8);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            animation: fadeIn 0.6s ease;
+            position: relative;
+            border: 1px solid var(--glass-border);
+            color: white;
+        }
+
+        .login-box h2 {
+            color: white;
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+        }
+
+        .login-options {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .login-btn {
+            padding: 0 !important;
+            border: none !important;
+            border-radius: 50% !important;
+            width: 80px !important;
+            height: 80px !important;
+            font-size: 2rem !important;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin: 0 10px;
+            /* Add spacing */
+        }
+
+        .login-btn.manager {
+            background: linear-gradient(135deg, var(--primary), #2980b9);
+        }
+
+        .login-btn.employee {
+            background: linear-gradient(135deg, var(--success), #00b894);
+        }
+
+        .login-btn.citizen {
+            background: linear-gradient(135deg, var(--warning), #ff9800);
+        }
+
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .offline-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: var(--danger);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            z-index: 3000;
+            display: none;
+        }
+
+        .offline .offline-indicator {
+            display: block;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 4000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                /* Hidden by default */
+                width: 80%;
+                max-width: 350px;
+                height: 100%;
+                max-height: 100%;
+                border-radius: 0;
+                margin: 0;
+                border-left: 1px solid var(--glass-border);
+                z-index: 1001;
+                transition: right 0.3s ease;
+            }
+
+            .sidebar.active {
+                right: 0;
+            }
+
+            .sidebar-toggle {
+                display: flex;
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .map-controls {
+                bottom: 20px;
+            }
+
+            .main-content {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .map-container {
+                min-height: 420px;
+                order: 1;
+                position: relative;
+                height: 50vh;
+            }
+
+            /* Citizen Interface Specific Fixes */
+            #citizenInterface .map-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                z-index: 0;
+            }
+
+            #citizenInterface .citizen-interface {
+                position: relative;
+                z-index: 10;
+                height: auto;
+                pointer-events: none;
+            }
+
+            #citizenInterface .citizen-layout {
+                pointer-events: none;
+            }
+
+            #citizenInterface .schedules-list {
+                pointer-events: auto;
+                max-height: 40vh;
+                position: fixed;
+                bottom: 80px;
+                left: 20px;
+                right: 20px;
+                top: auto;
+                width: auto;
+                margin: 0;
+                transform: translateY(calc(100% + 100px));
+                /* Completely hidden */
+                transition: transform 0.3s ease-in-out;
+            }
+
+            #citizenInterface .schedules-list.visible {
+                transform: translateY(0);
+                /* Shown when visible */
+                right: 20px;
+                /* Reset right for mobile */
+            }
+
+            .citizen-layout {
+                flex-direction: column;
+            }
+
+            .citizen-layout>div:first-child {
+                width: 100%;
+                position: relative;
+                top: auto;
+                right: auto;
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                gap: 5px;
+                text-align: center;
+                padding: 10px;
+                pointer-events: none;
+                /* Allow clicks through empty space */
+            }
+
+            header h1 {
+                font-size: 1.1rem;
+                padding: 6px 15px;
+                background-color: rgba(15, 23, 42, 0.9);
+                pointer-events: auto;
+                margin-bottom: 5px;
+                width: fit-content;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .user-info {
+                pointer-events: auto;
+                justify-content: center;
+            }
+
+            .login-box {
+                padding: 30px 25px;
+            }
+
+            .quick-stats {
+                flex-direction: column;
+            }
+
+            .map-controls {
+                bottom: 150px;
+                /* Move up to avoid bottom sheet */
+                left: 10px;
+                right: auto;
+                top: auto;
+            }
+
+            .map-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
+
+            /* Employee list popup */
+            .employee-list-popup {
+                position: absolute;
+                background: #1e293b;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+                border-radius: 8px;
+                padding: 10px;
+                min-width: 240px;
+                z-index: 5000;
+                display: none;
+                border: 1px solid var(--glass-border);
+                color: white;
+            }
+
+            .employee-list-popup .item {
+                padding: 8px 10px;
+                border-radius: 6px;
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+                align-items: center;
+                cursor: pointer;
+            }
+
+            .employee-list-popup .item .icon {
+                width: 36px;
+                height: 36px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 50%;
+                margin-left: 8px;
+                color: var(--primary);
+            }
+
+            .employee-list-popup .item:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .employee-list-popup .title {
+                font-weight: 700;
+                color: white;
+            }
+
+            .employee-list-popup .small {
+                font-size: 0.85rem;
+                color: #aaa;
+            }
+
+            /* Scrollbar */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 4px;
+            }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: rgba(255, 255, 255, 0.4);
+            }
+
+            .map-countdown-pill {
+                background: linear-gradient(135deg, #d32f2f, #b71c1c);
+                color: white;
+                padding: 2px 8px;
+                border-radius: 20px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                text-align: center;
+                display: inline-flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-width: 80px;
+                border: 1px solid white;
+                white-space: nowrap;
+            }
+
+            .map-pill-name {
+                font-size: 0.7rem;
+                font-weight: 700;
+                margin-bottom: 1px;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            }
+
+            .map-pill-timer {
+                font-size: 0.9rem;
+                font-weight: 800;
+                font-family: 'Segoe UI', monospace;
+                letter-spacing: 0.5px;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            }
+
+            .custom-map-tooltip {
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            .custom-map-tooltip .leaflet-tooltip-content {
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .app-logo-large {
+                max-width: 100px;
+                height: auto;
+                margin-bottom: 10px;
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+                filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+            }
+
+            .app-logo-small {
+                height: 24px;
+                width: auto;
+                margin-left: 10px;
+                vertical-align: middle;
+            }
+        }
+
+        /* Mobile First: Default to 1 column */
+        .schedule-card-details {
+            display: grid;
+            grid-template-columns: 1fr;
+            /* Default to single column */
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+
+        /* Tablet and Desktop: 2 columns */
+        @media (min-width: 769px) {
+            .schedule-card-details {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Google Maps Style Search Bar */
+        .google-search-bar {
+            position: absolute;
+            top: auto;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: white;
+            border-radius: 24px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 -1px 0px rgba(0, 0, 0, 0.02);
+            z-index: 2000;
+            /* Above map */
+            direction: rtl;
+            /* Arabic */
+            transition: all 0.3s ease;
+        }
+
+        .google-search-bar:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .google-search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            padding: 0 10px;
+            background: transparent;
+            color: #333;
+            font-family: inherit;
+            height: 100%;
+        }
+
+        .google-search-icon {
+            color: #5f6368;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .google-search-icon:hover {
+            background: #f1f3f4;
+        }
+
+        .google-direction-icon {
+            color: #1a73e8;
+            /* Google Blue */
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-left: 1px solid #ddd;
+            /* Separator */
+            margin-left: 5px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .google-direction-icon:hover {
+            background: #e8f0fe;
+        }
+
+        /* Adjust for mobile */
+        @media (max-width: 600px) {
+            .google-search-bar {
+                bottom: 10px;
+                /* Lowest position */
+                top: auto;
+                width: 95%;
+            }
+        }
+    </style>
+    <!-- Firebase SDK (v8.10.1) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+
+    <!-- Firebase Config & Service -->
+    <script src="firebase_config.js"></script>
+    <script src="firebase_service.js"></script>
+</head>
+
+<body>
+    <div class="offline-indicator">
+        <i class="fas fa-wifi-slash"></i> غير متصل
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div id="loginScreen" class="login-container" style="display: none;">
+        <div class="login-box">
+            <h2>نظام توزيع المياه</h2>
+            <p style="margin-bottom: 30px; color: #666;">اختر نوع المستخدم للدخول إلى النظام</p>
+            <div class="login-options">
+                <button class="login-btn manager" id="managerLoginBtn" title="الدخول كمدير">
+                    <i class="fas fa-user-tie"></i>
+                </button>
+                <button class="login-btn employee" id="employeeLoginBtn" title="دخول الموظفين">
+                    <i class="fas fa-users"></i>
+                </button>
+                <button class="login-btn citizen" data-role="citizen" title="الدخول كمواطن">
+                    <i class="fas fa-user"></i>
+                </button>
+                <button class="login-btn" id="loginUpdateBtn" title="تحديث البرنامج"
+                    style="background: linear-gradient(135deg, #607d8b, #455a64);">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <div id="employeeListPopup" class="employee-list-popup" role="dialog" aria-hidden="true">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                        <div class="title">قائمة الموظفين</div>
+                        <button id="closeEmployeeList"
+                            style="border:none;background:none;cursor:pointer;font-size:16px;color:#999;">&times;</button>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <input id="employeeSearchPopup" placeholder="ابحث عن موظف..."
+                            style="width:100%;padding:8px;border:1px solid #e6e9ee;border-radius:6px;" />
+                    </div>
+                    <div id="employeeListItems" style="max-height:220px;overflow:auto;"></div>
+                    <div style="margin-top:8px;text-align:center;">
+                        <button id="openManagerCode" class="btn" style="padding:6px 10px;">رمز المدير</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminCodeModal" class="admin-code-modal">
+        <div class="admin-code-content">
+            <h3><i class="fas fa-lock"></i> رمز الدخول</h3>
+            <p>أدخل رمز الدخول للوصول إلى لوحة المدير أو حساب الموظف</p>
+            <div id="adminTargetLabel"
+                style="display:none;margin-bottom:8px;color:#333;font-weight:700;text-align:center;"></div>
+            <input type="password" id="adminCodeInput" placeholder="أدخل رمز الدخول (رمز المدير أو رقم الموظف)">
+            <div class="admin-code-buttons" style="display:flex;gap:10px;margin-top:15px;">
+                <button class="btn-confirm" id="confirmAdminCode"
+                    style="flex:1;padding:12px;border:none;border-radius:6px;background:var(--success);color:white;">تأكيد</button>
+                <button class="btn-cancel" id="cancelAdminCode"
+                    style="flex:1;padding:12px;border:none;border-radius:6px;background:var(--danger);color:white;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Search Modal -->
+    <div id="searchModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; padding: 0;">
+            <div class="modal-header" style="padding: 15px 20px; border-bottom: 1px solid #eee;">
+                <h3 style="margin:0;">بحث متطور</h3>
+                <span class="close-modal" onclick="closeSearchModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div class="form-group" style="position: relative;">
+                    <input type="text" id="advancedSearchInput" placeholder="اكتب اسم المكان للبحث..."
+                        style="width: 100%; padding: 12px 40px 12px 15px; border-radius: 25px; border: 1px solid #ddd; font-size: 16px;">
+                    <i class="fas fa-search"
+                        style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #888;"></i>
+                </div>
+                <div id="searchResults" style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
+                    <!-- Results will appear here -->
+                    <div style="text-align: center; color: #888; padding: 20px;">
+                        <i class="fas fa-search-location"
+                            style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <p>ابدأ الكتابة للبحث عن المواقع...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainApp" class="container" style="display: flex;">
+        <header>
+            <h1>نظام إدارة توزيع المياه</h1>
+            <div class="user-info">
+
+
+                <button id="headerBroadcastBtn" class="btn-bell"
+                    style="display:none; width:35px; height:35px; font-size:1rem; margin-left:10px; box-shadow:none; border:1px solid rgba(255,255,255,0.2);">
+                    <i class="fas fa-bell"></i>
+                    <span class="bell-pulse" style="border-color:white;"></span>
+                </button>
+                <button id="citizenNotificationBtn" class="btn-bell"
+                    style="display:none; width:35px; height:35px; font-size:1rem; margin-left:10px; box-shadow:none; border:1px solid rgba(255,255,255,0.2);"
+                    title="سجل الإشعارات">
+                    <i class="fas fa-bell"></i>
+                </button>
+
+                <button id="enableNotifBtn" class="btn-bell"
+                    onclick="requestNotificationPermission().then(t => { if(t) showToast('تم تفعيل الإشعارات بنجاح'); })"
+                    style="width:35px;height:35px;font-size:1rem;margin-left:10px;box-shadow:none;border:1px solid rgba(255,255,255,0.2);"
+                    title="تفعيل التنبيهات">
+                    <i class="fas fa-broadcast-tower"></i>
+                </button>
+
+                <button id="aboutBtn" class="btn-bell"
+                    style="width:35px;height:35px;font-size:1rem;margin-left:10px;box-shadow:none;border:1px solid rgba(255,255,255,0.2);"
+                    title="حول البرنامج">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+                <button id="headerUpdateBtn" class="btn-bell"
+                    style="width:35px;height:35px;font-size:1rem;margin-left:10px;box-shadow:none;border:1px solid rgba(255,255,255,0.2);"
+                    title="تحديث البرنامج">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button id="logoutBtn" class="logout-btn icon-only" title="الدخول لشاشة الدائرة">
+                    <i class="fas fa-user"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="managerInterface" class="tab-content">
+            <!-- ... -->
+        </div>
+        <!-- ... -->
+    </div>
+
+    <div id="notificationModal" class="modal">
+        <div class="notification-center">
+            <div class="nc-header">
+                <h3><i class="fas fa-bell"></i> مركز الإشعارات</h3>
+                <span class="close" id="closeNotificationModal" style="color:white;opacity:0.8;">&times;</span>
+            </div>
+            <div class="nc-body">
+                <div class="nc-tabs">
+                    <div class="nc-tab active" data-tab="new">إشعار جديد</div>
+                    <div class="nc-tab" data-tab="history">السجل</div>
+                </div>
+
+                <div id="ncTabNew">
+                    <div class="form-group"
+                        style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom:8px; font-weight:bold;">نوع الإشعار:</label>
+                        <div style="display:flex; gap:20px;">
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                                <input type="radio" name="notifType" value="start" checked> بدء التوزيع
+                            </label>
+                            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                                <input type="radio" name="notifType" value="end"> انتهاء التوزيع
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="notifyScheduleSelect">اختر الجدول للإعلان عنه</label>
+                        <select id="notifyScheduleSelect">
+                            <option value="">-- اختر منطقة التوزيع --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="notificationMessage">نص الإشعار</label>
+                        <textarea id="notificationMessage" rows="4"
+                            placeholder="سيتم توليد النص تلقائياً عند اختيار الجدول..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="notificationDuration">مدة بقاء الإشعار (بالساعات)</label>
+                        <input type="number" id="notificationDuration" value="24" min="1" placeholder="مثال: 24">
+                    </div>
+                    <div class="form-group">
+                        <label><input type="checkbox" id="sendSMS" checked> رسالة SMS</label>
+                        <label><input type="checkbox" id="sendPush" checked> إشعار تطبيق</label>
+                    </div>
+                    <button id="confirmSend" class="btn btn-primary"
+                        style="width:100%; padding:12px; font-size:1.1rem;">
+                        <i class="fas fa-paper-plane"></i> إرسال الإشعار
+                    </button>
+                </div>
+
+                <div id="ncTabHistory" style="display:none; max-height:300px; overflow-y:auto;">
+                    <div id="notificationHistoryList">
+                        <!-- History items will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="managerInterface" class="tab-content">
+        <div class="main-content">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <aside class="sidebar">
+                <div class="controls">
+                    <div
+                        style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;border-bottom:1px solid var(--glass-border);padding-bottom:10px;">
+                        <h3 style="margin:0;border:none;padding:0;"><i class="fas fa-cog"></i> لوحة تحكم المدير</h3>
+                        <div style="display:flex; gap:5px;">
+                            <button id="updateProgramBtn" class="btn-bell"
+                                style="width:32px;height:32px;font-size:0.9rem;background:rgba(255,255,255,0.1);box-shadow:none;"
+                                title="تحديث البرنامج">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button id="managerBackBtn" class="btn-bell"
+                                style="width:32px;height:32px;font-size:0.9rem;background:rgba(255,255,255,0.1);box-shadow:none;"
+                                title="الرجوع للرئيسية">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeName">اسم الموظف</label>
+                        <input type="text" id="employeeName" placeholder="أدخل اسم الموظف">
+                    </div>
+                    <div class="form-group">
+                        <label for="employeePhone">رقم الهاتف</label>
+                        <input type="text" id="employeePhone" placeholder="05XXXXXXXX">
+                    </div>
+                    <button id="addEmployee" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> إضافة موظف
+                    </button>
+                    <hr style="margin: 20px 0;">
+                    <div class="form-group">
+                        <label for="areaName">اسم المنطقة</label>
+                        <input type="text" id="areaName" placeholder="أدخل اسم المنطقة">
+                    </div>
+                    <div id="areaCoordsFields" class="form-group" style="display:none;">
+                        <label>الإحداثيات (X, Y)</label>
+                        <div style="display:flex;gap:8px;">
+                            <input type="number" id="areaCoordX" placeholder="X (خط الطول)" step="any" style="flex:1;">
+                            <input type="number" id="areaCoordY" placeholder="Y (خط العرض)" step="any" style="flex:1;">
+                        </div>
+                    </div>
+                    <div id="drawAreaTools" style="display:none;margin-bottom:10px;">
+                        <button id="openDrawAreaBtn" class="btn btn-success btn-small" type="button"><i
+                                class="fas fa-pencil-alt"></i> رسم منطقة/معلم على الخريطة</button>
+                        <span style="color:#666;font-size:0.95rem;">يمكنك رسم نقطة أو خط أو مضلع لتحديد المنطقة
+                            بدقة</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="areaDescription">وصف المنطقة</label>
+                        <textarea id="areaDescription" rows="2" placeholder="وصف مختصر"></textarea>
+                    </div>
+                    <button id="addArea" class="btn btn-primary">
+                        <i class="fas fa-map-marker-alt"></i> إضافة منطقة
+                    </button>
+                    <hr style="margin: 20px 0;">
+                    <div class="form-group">
+                        <label for="scheduleArea">المنطقة</label>
+                        <select id="scheduleArea">
+                            <option value="">اختر المنطقة</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+                        <button id="openAreaEditorBtn" class="btn btn-primary btn-small"
+                            style="flex:0 0 auto;background:linear-gradient(135deg,#1976d2,#1565c0);color:#fff;border:2px solid #1565c0;box-shadow:0 8px 24px rgba(25,118,210,0.25);font-weight:700;letter-spacing:1px;">تعديل
+                            / حذف المنطقة</button>
+                        <div style="flex:1;color:#666;font-size:0.95rem;">اضغط للتعديل أو الحذف للمناطق الموجودة
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleEmployee">الموظف المسؤول</label>
+                        <select id="scheduleEmployee">
+                            <option value="">اختر الموظف</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleDate">تاريخ التوزيع</label>
+                        <input type="date" id="scheduleDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleTime">وقت البدء</label>
+                        <input type="time" id="scheduleTime">
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleDuration">مدة التجهيز (ساعات)</label>
+                        <input type="number" id="scheduleDuration" min="1" max="24" value="4">
+                    </div>
+                    <button id="addSchedule" class="btn btn-primary">
+                        <i class="fas fa-plus-circle"></i> إضافة جدول
+                    </button>
+                    <div class="quick-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalEmployees">0</span>
+                            <span class="stat-label">الموظفين</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalAreas">0</span>
+                            <span class="stat-label">المناطق</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalSchedules">0</span>
+                            <span class="stat-label">الجداول</span>
+                        </div>
+                    </div>
+                    <hr style="margin: 20px 0;">
+                </div>
+                <div class="schedules-list">
+                    <h4><i class="fas fa-users"></i> قائمة الموظفين</h4>
+                    <div class="form-group" style="position:relative;">
+                        <input type="text" id="employeeSearch" placeholder="ابحث في الموظفين..."
+                            style="border-radius: 30px; padding-inline-start: 40px;">
+                        <i class="fas fa-search"
+                            style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#aaa;"></i>
+                    </div>
+                    <div id="employeesContainer"></div>
+                </div>
+                <div class="schedules-list">
+                    <h4><i class="fas fa-calendar-alt"></i> جداول التوزيع</h4>
+                    <div id="managerSchedulesContainer"></div>
+                </div>
+            </aside>
+            <main class="map-container">
+                <div id="map"></div>
+                <div class="map-controls">
+                    <button class="map-btn" id="currentLocation"><i class="fas fa-location-arrow"></i></button>
+                    <button class="map-btn" id="zoomIn"><i class="fas fa-plus"></i></button>
+                    <button class="map-btn" id="zoomOut"><i class="fas fa-minus"></i></button>
+                    <button class="map-btn" onclick="toggleMapType('manager')" title="تبديل نوع الخريطة"><i
+                            class="fas fa-layer-group"></i></button>
+                    <button class="map-btn" onclick="openSearchModal('manager')" title="بحث متطور"><i
+                            class="fas fa-search"></i></button>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="employeeInterface" class="tab-content">
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="controls">
+                    <h3><i class="fas fa-user-cog"></i> لوحة تحكم الموظف</h3>
+                    <div class="form-group">
+                        <label for="employeeSelect">اختر الموظف</label>
+                        <select id="employeeSelect">
+                            <option value="">اختر اسمك</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeArea">المنطقة المخصصة</label>
+                        <select id="employeeArea">
+                            <option value="">سيظهر بعد اختيار الموظف</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeScheduleTime">وقت التوزيع</label>
+                        <input type="time" id="employeeScheduleTime">
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeDuration">مدة التوزيع (ساعات)</label>
+                        <input type="number" id="employeeDuration" min="1" max="24" value="4">
+                    </div>
+                    <button id="updateSchedule" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> تحديث الجدول
+                    </button>
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
+                        <span style="color:#aaa; font-size:0.9rem;">أدوات إضافية:</span>
+                        <button id="employeeBroadcastBtn" class="btn-bell" title="مركز الإشعارات">
+                            <i class="fas fa-bell"></i>
+                        </button>
+                    </div>
+                    <div class="quick-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="employeeCompleted">0</span>
+                            <span class="stat-label">مكتمل</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="employeePending">0</span>
+                            <span class="stat-label">معلق</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="employeeTotal">0</span>
+                            <span class="stat-label">الإجمالي</span>
+                        </div>
+                    </div>
+                </div>
+                <hr style="margin: 20px 0;">
+        </div>
+        <div class="schedules-list">
+            <h4><i class="fas fa-list"></i> جداولي</h4>
+            <div id="employeeSchedulesContainer"></div>
+        </div>
+        </aside>
+        <main class="map-container">
+            <div id="employeeMap"></div>
+            <div class="map-controls">
+                <button class="map-btn" id="employeeCurrentLocation"><i class="fas fa-location-arrow"></i></button>
+                <button class="map-btn" id="employeeZoomIn"><i class="fas fa-plus"></i></button>
+                <button class="map-btn" id="employeeZoomOut"><i class="fas fa-minus"></i></button>
+                <button class="map-btn" onclick="toggleMapType('employee')" title="تبديل نوع الخريطة"><i
+                        class="fas fa-layer-group"></i></button>
+                <button class="map-btn" onclick="openSearchModal('employee')" title="بحث متطور"><i
+                        class="fas fa-search"></i></button>
+            </div>
+
+        </main>
+    </div>
+    </div>
+
+    <div id="citizenInterface" class="tab-content">
+        <div class="citizen-interface">
+            <div class="citizen-info" style="display:block !important;">
+                <h3><i class="fas fa-info-circle"></i> مواعيد توزيع المياه</h3>
+                <p>استعرض الخريطة لمعرفة مواعيد توزيع المياه في منطقتك</p>
+            </div>
+            <div class="citizen-layout">
+                <div class="hover-trigger-zone" id="schedulesHoverZone"></div>
+                <div class="schedules-list">
+                    <h4><i class="fas fa-clock"></i> المواعيد القادمة</h4>
+                    <div id="citizenSchedulesContainer"></div>
+                </div>
+            </div>
+        </div>
+        <main class="map-container">
+            <div id="citizenMap"></div>
+            <div class="map-controls">
+                <button class="map-btn" id="toggleSchedulesBtn" title="عرض مواعيد التوزيع"><i
+                        class="fas fa-calendar-alt"></i></button>
+                <button class="map-btn" id="citizenCurrentLocation"><i class="fas fa-location-arrow"></i></button>
+                <button class="map-btn" id="citizenZoomIn"><i class="fas fa-plus"></i></button>
+                <button class="map-btn" id="citizenZoomOut"><i class="fas fa-minus"></i></button>
+                <button class="map-btn" onclick="toggleMapType('citizen')" title="تبديل نوع الخريطة"><i
+                        class="fas fa-layer-group"></i></button>
+                <button class="map-btn" onclick="openSearchModal('citizen')" title="بحث متطور"><i
+                        class="fas fa-search"></i></button>
+            </div>
+
+        </main>
+    </div>
+    </div>
+
+    <!-- Duplicate Notification Modal Removed -->
+
+    <!-- Draw Area Modal Removed (Moved to new tab) -->
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" id="closeAboutModal">&times;</span>
+            <h3 style="color: var(--secondary); margin-bottom: 20px;"><i class="fas fa-info-circle"></i> حول البرنامج
+            </h3>
+            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <h4 style="color: white; margin-bottom: 10px;">نظام إدارة توزيع المياه</h4>
+                <p style="color: #aaa; font-size: 0.9rem;">الإصدار 1.3</p>
+            </div>
+            <div style="text-align: right; color: white;">
+                <p style="margin-bottom: 10px;"><strong><i class="fas fa-code"></i> تصميم وبرمجة:</strong></p>
+                <p style="margin-bottom: 15px; color: var(--primary); font-size: 1.1rem;">اياد دحام محمد</p>
+
+                <p style="margin-bottom: 10px;"><strong><i class="fas fa-building"></i> الجهة:</strong></p>
+                <p style="margin-bottom: 15px; color: var(--secondary);">مديرية ماء محافظة نينوى _ شعبة ماء زمار</p>
+
+                <p style="margin-bottom: 10px;"><strong><i class="fas fa-phone"></i> للتواصل:</strong></p>
+                <p
+                    style="direction: ltr; text-align: right; color: var(--success); font-family: monospace; font-size: 1.1rem;">
+                    07518608964</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Area Editor Modal -->
+    <div id="areaEditorModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeAreaEditorModal">&times;</span>
+            <h3><i class="fas fa-map-marker-alt"></i> تعديل / حذف المنطقة</h3>
+            <div class="form-group">
+                <label for="areaEditorSelect">اختر المنطقة</label>
+                <select id="areaEditorSelect">
+                    <option value="">اختر المنطقة لتعديلها</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="areaEditorName">اسم المنطقة</label>
+                <input type="text" id="areaEditorName" placeholder="اسم المنطقة">
+            </div>
+            <div class="form-group">
+                <label for="areaEditorDesc">وصف المنطقة</label>
+                <textarea id="areaEditorDesc" rows="2" placeholder="وصف مختصر"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button id="saveAreaEditBtn" class="btn btn-primary" style="flex:1;"><i class="fas fa-save"></i> حفظ
+                    التغييرات</button>
+                <button id="deleteAreaBtn" class="btn btn-secondary" style="flex:1;"><i class="fas fa-trash"></i> حذف
+                    المنطقة</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <!-- Firebase Config & Service -->
+    <script src="firebase_config.js"></script>
+    <script src="firebase_service.js"></script>
+    <script>
+        const ADMIN_CODE = '3326730';
+        const STORAGE_KEYS = {
+            employees: 'waterEmployees',
+            areas: 'waterAreas',
+            schedules: 'waterSchedules'
+        };
+        const DEFAULT_CENTER = [36.3489, 43.1577];
+
+        let currentRole = null;
+        let currentEmployeeId = null; // set when an employee logs in via code
+        let editingEmployeeId = null;
+        let employees = [];
+        let areas = [];
+        let schedules = [];
+
+        const maps = {
+            manager: { id: 'map', instance: null, markers: [], layers: {} },
+            employee: { id: 'employeeMap', instance: null, markers: [], layers: {} },
+            citizen: { id: 'citizenMap', instance: null, markers: [], layers: {} }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            try { attachLoginHandlers(); } catch (e) { console.error('Error in attachLoginHandlers:', e); }
+            try { attachFormHandlers(); } catch (e) { console.error('Error in attachFormHandlers:', e); }
+            try { attachModalHandlers(); } catch (e) { console.error('Error in attachModalHandlers:', e); }
+            try { attachNotificationHandlers(); } catch (e) { console.error('Error in attachNotificationHandlers:', e); }
+            try { attachConnectivityHandlers(); } catch (e) { console.error('Error in attachConnectivityHandlers:', e); }
+            try { attachConnectivityHandlers(); } catch (e) { console.error('Error in attachConnectivityHandlers:', e); }
+            // try { seedData(); } catch (e) { console.error('Error in seedData:', e); } // Disabled for Firebase
+
+            // Start Realtime Sync instead of local load
+            startRealtimeSync(() => {
+                updateUI();
+                console.log("UI Updated from Firebase");
+            });
+
+            // Request Notification Permission
+            requestNotificationPermission();
+            try { updateUI(); } catch (e) { console.error('Error in updateUI:', e); }
+
+            setTimeout(() => showToast('تم تحديث النظام v2.1', 'success'), 1000);
+
+            const scheduleDateInput = document.getElementById('scheduleDate');
+            if (scheduleDateInput) {
+                scheduleDateInput.value = new Date().toISOString().split('T')[0];
+            }
+
+            // Check for URL params to auto-login (e.g. for Manager Popup)
+            const urlParams = new URLSearchParams(window.location.search);
+            const roleParam = urlParams.get('role');
+
+            if (roleParam === 'manager') {
+                try {
+                    login('manager');
+                } catch (e) {
+                    console.error('Error auto-logging in as manager:', e);
+                    login('citizen');
+                }
+            } else {
+                // Always open main app as 'citizen' (Landing Page) every time the program is opened.
+                try {
+                    login('citizen');
+                } catch (e) {
+                    console.error('Error initializing default interface:', e);
+                }
+            }
+        });
+
+        function attachLoginHandlers() {
+            // Manager button opens the admin code modal
+            const mgrBtn = document.getElementById('managerLoginBtn');
+            if (mgrBtn) mgrBtn.addEventListener('click', () => {
+                const input = document.getElementById('adminCodeInput');
+                if (input) {
+                    input.placeholder = 'أدخل رمز المدير';
+                    try { delete input.dataset.targetEmp; } catch (e) { }
+                    input.dataset.source = 'manager';
+                }
+                toggleAdminModal(true);
+            });
+
+            // Citizen Notification Button
+            const citizenNotifBtn = document.getElementById('citizenNotificationBtn');
+            if (citizenNotifBtn) {
+                citizenNotifBtn.addEventListener('click', () => {
+                    const modal = document.getElementById('notificationModal');
+                    const tabs = document.querySelectorAll('.nc-tab');
+                    const tabContents = ['ncTabNew', 'ncTabHistory'];
+
+                    // Show modal
+                    modal.style.display = 'flex';
+
+                    // Switch to history tab
+                    tabs.forEach(t => {
+                        if (t.dataset.tab === 'history') t.classList.add('active');
+                        else t.classList.remove('active');
+                    });
+
+                    document.getElementById('ncTabNew').style.display = 'none';
+                    document.getElementById('ncTabHistory').style.display = 'block';
+
+                    // Hide "New Notification" tab option for citizens (optional, but good for UX)
+                    // For now we just switch to history. 
+                    // If we want to hide the tab header itself:
+                    const newTabHeader = document.querySelector('.nc-tab[data-tab="new"]');
+                    if (newTabHeader) newTabHeader.style.display = 'none';
+
+                    populateNotificationHistory();
+                });
+            }
+            // Employee button opens the same code modal
+            const empBtn = document.getElementById('employeeLoginBtn');
+            if (empBtn) empBtn.addEventListener('click', () => {
+                const input = document.getElementById('adminCodeInput');
+                if (input) {
+                    input.placeholder = 'أدخل رمز الموظف (رقم الجوال أو المعرف)';
+                    try { delete input.dataset.targetEmp; } catch (e) { }
+                    input.dataset.source = 'employee';
+                }
+                toggleAdminModal(true);
+            });
+            document.getElementById('confirmAdminCode').addEventListener('click', verifyAdminCode);
+            document.getElementById('cancelAdminCode').addEventListener('click', () => toggleAdminModal(false));
+            document.getElementById('adminCodeInput').addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    verifyAdminCode();
+                }
+            });
+            // citizen button
+            document.querySelectorAll('.login-btn[data-role]').forEach(button => {
+                button.addEventListener('click', () => login(button.dataset.role));
+            });
+
+            // Handle Login/Logout button in header
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                if (currentRole === 'citizen') {
+                    // Show Admin Code Modal directly
+                    const input = document.getElementById('adminCodeInput');
+                    if (input) {
+                        input.placeholder = 'أدخل رمز الدخول (رمز المدير أو رقم الموظف)';
+                        try { delete input.dataset.targetEmp; } catch (e) { }
+                        try { delete input.dataset.source; } catch (e) { }
+                    }
+                    toggleAdminModal(true);
+                } else {
+                    // Logout -> Go to Citizen
+                    login('citizen');
+                    showToast('تم تسجيل الخروج');
+                }
+            });
+
+            // Close employee list popup if clicked outside
+            document.addEventListener('click', (ev) => {
+                const popup = document.getElementById('employeeListPopup');
+                if (!popup) return;
+                if (popup.style.display === 'block') {
+                    const emp = document.getElementById('employeeLoginBtn');
+                    if (ev.target !== popup && !popup.contains(ev.target) && ev.target !== emp) {
+                        toggleEmployeeListPopup(false);
+                    }
+                }
+            });
+
+            const closeEmp = document.getElementById('closeEmployeeList');
+            if (closeEmp) closeEmp.addEventListener('click', () => toggleEmployeeListPopup(false));
+            const openMgrCode = document.getElementById('openManagerCode');
+            if (openMgrCode) openMgrCode.addEventListener('click', () => { toggleEmployeeListPopup(false); toggleAdminModal(true); });
+        }
+
+        function attachFormHandlers() {
+            document.getElementById('addEmployee').addEventListener('click', handleAddOrUpdateEmployee);
+            document.getElementById('addArea').addEventListener('click', handleAddArea);
+            // Show coordinate fields and draw tools when area name is entered
+            const areaNameInput = document.getElementById('areaName');
+            if (areaNameInput) {
+                areaNameInput.addEventListener('input', function () {
+                    const show = !!this.value.trim();
+                    document.getElementById('areaCoordsFields').style.display = show ? 'block' : 'none';
+                    document.getElementById('drawAreaTools').style.display = show ? 'block' : 'none';
+                });
+            }
+            // Drawing tool button
+            const openDrawAreaBtn = document.getElementById('openDrawAreaBtn');
+            if (openDrawAreaBtn) openDrawAreaBtn.addEventListener('click', function () {
+                window.open('draw_map.html', '_blank');
+            });
+            const openAreaEditorBtn = document.getElementById('openAreaEditorBtn');
+            if (openAreaEditorBtn) openAreaEditorBtn.addEventListener('click', openAreaEditor);
+            document.getElementById('addSchedule').addEventListener('click', handleAddSchedule);
+            document.getElementById('employeeSelect').addEventListener('change', handleEmployeeSelection);
+            document.getElementById('employeeArea').addEventListener('change', handleEmployeeAreaSelection);
+            document.getElementById('updateSchedule').addEventListener('click', handleEmployeeScheduleUpdate);
+            // document.getElementById('sendNotification').addEventListener('click', () => toggleNotificationModal(true));
+            document.getElementById('confirmSend').addEventListener('click', handleSendNotifications);
+            document.getElementById('employeeSearch').addEventListener('input', (event) => updateEmployeeList(event.target.value));
+            document.getElementById('currentLocation').addEventListener('click', () => centerOnCurrentLocation('manager'));
+            document.getElementById('zoomIn').addEventListener('click', () => adjustManagerZoom(1));
+            document.getElementById('zoomOut').addEventListener('click', () => adjustManagerZoom(-1));
+
+            const globalSearchBtn = document.getElementById('globalSearchBtn');
+            if (globalSearchBtn) {
+                globalSearchBtn.addEventListener('click', searchGlobalLocation);
+            }
+            const globalSearchInput = document.getElementById('globalSearchInput');
+            if (globalSearchInput) {
+                globalSearchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') searchGlobalLocation();
+                });
+            }
+
+            const globalSearchBtnEmp = document.getElementById('globalSearchBtnEmp');
+            if (globalSearchBtnEmp) {
+                globalSearchBtnEmp.addEventListener('click', () => searchGlobalLocation('emp'));
+            }
+            const globalSearchInputEmp = document.getElementById('globalSearchInputEmp');
+            if (globalSearchInputEmp) {
+                globalSearchInputEmp.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') searchGlobalLocation('emp');
+                });
+            }
+
+            const globalSearchBtnCitizen = document.getElementById('globalSearchBtnCitizen');
+            if (globalSearchBtnCitizen) {
+                globalSearchBtnCitizen.addEventListener('click', () => searchGlobalLocation('citizen'));
+            }
+            const globalSearchInputCitizen = document.getElementById('globalSearchInputCitizen');
+            if (globalSearchInputCitizen) {
+                globalSearchInputCitizen.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') searchGlobalLocation('citizen');
+                });
+            }
+
+            // Citizen Map Controls
+            document.getElementById('citizenCurrentLocation').addEventListener('click', () => centerOnCurrentLocation('citizen'));
+            document.getElementById('citizenZoomIn').addEventListener('click', () => adjustCitizenZoom(1));
+            document.getElementById('citizenZoomOut').addEventListener('click', () => adjustCitizenZoom(-1));
+
+            // Manager Back Button
+            const managerBackBtn = document.getElementById('managerBackBtn');
+            if (managerBackBtn) {
+                managerBackBtn.addEventListener('click', () => {
+                    if (confirm('هل تريد الرجوع للشاشة الرئيسية؟')) {
+                        location.reload();
+                    }
+                });
+            }
+
+            // Update Program Button
+            const updateProgramBtn = document.getElementById('updateProgramBtn');
+            if (updateProgramBtn) {
+                updateProgramBtn.addEventListener('click', () => {
+                    location.reload();
+                });
+            }
+
+            // Login Screen Update Button
+            const loginUpdateBtn = document.getElementById('loginUpdateBtn');
+            if (loginUpdateBtn) {
+                loginUpdateBtn.addEventListener('click', () => {
+                    location.reload();
+                });
+            }
+
+            // Header Update Button
+            const headerUpdateBtn = document.getElementById('headerUpdateBtn');
+            if (headerUpdateBtn) {
+                headerUpdateBtn.addEventListener('click', () => {
+                    location.reload();
+                });
+            }
+
+            // Toggle Schedules List Logic
+            const toggleBtn = document.getElementById('toggleSchedulesBtn');
+            const schedulesList = document.querySelector('.citizen-layout .schedules-list');
+            let autoHideTimer;
+
+            function showSchedules() {
+                if (schedulesList && !schedulesList.classList.contains('visible')) {
+                    schedulesList.classList.add('visible');
+                    clearTimeout(autoHideTimer);
+                    // Auto hide after 8 seconds of inactivity
+                    autoHideTimer = setTimeout(() => {
+                        schedulesList.classList.remove('visible');
+                    }, 8000);
+                } else if (schedulesList) {
+                    // If already visible, just reset the timer
+                    clearTimeout(autoHideTimer);
+                    autoHideTimer = setTimeout(() => {
+                        schedulesList.classList.remove('visible');
+                    }, 8000);
+                }
+            }
+
+            function hideSchedules() {
+                if (schedulesList && schedulesList.classList.contains('visible')) {
+                    autoHideTimer = setTimeout(() => {
+                        schedulesList.classList.remove('visible');
+                    }, 3000);
+                }
+            }
+
+            if (toggleBtn && schedulesList) {
+                toggleBtn.addEventListener('click', () => {
+                    if (schedulesList.classList.contains('visible')) {
+                        schedulesList.classList.remove('visible');
+                        clearTimeout(autoHideTimer);
+                    } else {
+                        showSchedules();
+                    }
+                });
+
+                // Keep visible while hovering list
+                schedulesList.addEventListener('mouseenter', () => {
+                    clearTimeout(autoHideTimer);
+                });
+
+                // Hide after leaving list
+                schedulesList.addEventListener('mouseleave', hideSchedules);
+
+                // Global Mouse Move to trigger from right edge
+                document.addEventListener('mousemove', (e) => {
+                    // Check if we are on the Citizen Map tab
+                    const citizenTab = document.getElementById('citizenInterface');
+                    if (citizenTab && citizenTab.style.display !== 'none') {
+                        // If mouse is within 50px of the right edge
+                        if (window.innerWidth - e.clientX < 50) {
+                            showSchedules();
+                        }
+                    }
+                });
+            }
+        }
+
+        function adjustManagerZoom(delta) {
+            const map = maps.manager.instance;
+            if (map) map.setZoom(map.getZoom() + delta);
+        }
+
+        function adjustCitizenZoom(delta) {
+            const map = maps.citizen.instance;
+            if (map) map.setZoom(map.getZoom() + delta);
+        }
+
+        function attachModalHandlers() {
+            const notificationModal = document.getElementById('notificationModal');
+            document.getElementById('closeNotificationModal').addEventListener('click', () => toggleNotificationModal(false));
+            notificationModal.addEventListener('click', (event) => {
+                if (event.target === notificationModal) {
+                    toggleNotificationModal(false);
+                }
+            });
+            const adminModal = document.getElementById('adminCodeModal');
+            adminModal.addEventListener('click', (event) => {
+                if (event.target === adminModal) {
+                    toggleAdminModal(false);
+                }
+            });
+            // Area editor modal handlers
+            const areaModal = document.getElementById('areaEditorModal');
+            const closeAreaBtn = document.getElementById('closeAreaEditorModal');
+            if (closeAreaBtn) closeAreaBtn.addEventListener('click', () => toggleAreaEditor(false));
+            if (areaModal) {
+                areaModal.addEventListener('click', (event) => {
+                    if (event.target === areaModal) toggleAreaEditor(false);
+                });
+            }
+            const areaSelect = document.getElementById('areaEditorSelect');
+            if (areaSelect) areaSelect.addEventListener('change', onAreaEditorSelectChange);
+            const saveAreaBtn = document.getElementById('saveAreaEditBtn');
+            if (saveAreaBtn) saveAreaBtn.addEventListener('click', saveAreaEdit);
+            const deleteAreaBtn = document.getElementById('deleteAreaBtn');
+            if (deleteAreaBtn) deleteAreaBtn.addEventListener('click', deleteArea);
+        }
+
+        function attachConnectivityHandlers() {
+            window.addEventListener('online', () => {
+                document.body.classList.remove('offline');
+                showToast('تم استعادة الاتصال بالإنترنت');
+            });
+            window.addEventListener('offline', () => {
+                document.body.classList.add('offline');
+                showToast('أنت غير متصل بالإنترنت', 'danger');
+            });
+            if (!navigator.onLine) {
+                document.body.classList.add('offline');
+            }
+        }
+
+        function seedData() {
+            employees = JSON.parse(localStorage.getItem(STORAGE_KEYS.employees)) || [];
+            areas = JSON.parse(localStorage.getItem(STORAGE_KEYS.areas)) || [];
+            schedules = JSON.parse(localStorage.getItem(STORAGE_KEYS.schedules)) || [];
+
+            if (employees.length === 0) {
+                // employees = []; // Keep empty
+            }
+
+            if (areas.length === 0) {
+                // areas = []; // Keep empty
+            }
+
+            areas = areas.map(area => ({
+                ...area,
+                geojson: area.geojson || null
+            }));
+
+            if (schedules.length === 0) {
+                // schedules = []; // Keep empty
+            }
+
+            // TEMPORARY: Inject test schedule removed
+
+            persistAll();
+        }
+
+        function login(role) {
+            currentRole = role;
+            document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+            document.getElementById('adminCodeModal').style.display = 'none';
+            document.getElementById('employeeListPopup').style.display = 'none';
+
+            const headerBtn = document.getElementById('headerBroadcastBtn');
+            if (headerBtn) headerBtn.style.display = role === 'manager' ? 'flex' : 'none';
+
+            const citizenNotifBtn = document.getElementById('citizenNotificationBtn');
+
+            if (citizenNotifBtn) citizenNotifBtn.style.display = role === 'citizen' ? 'flex' : 'none';
+
+
+            try {
+                localStorage.setItem('showLogin', 'false');
+                localStorage.setItem('savedRole', role);
+            } catch (e) { }
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'flex';
+
+            showInterface(role);
+            ensureMapInitialized(role);
+            updateUI();
+
+            // Special handling for manager split view
+            // Ensure sidebar is visible
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) sidebar.style.display = 'block';
+            showToast(`مرحباً بك في نظام توزيع المياه - ${getRoleName(role)}`);
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                if (role === 'citizen') {
+                    logoutBtn.innerHTML = '<i class="fas fa-user"></i>';
+                    logoutBtn.classList.add('icon-only');
+                    logoutBtn.title = 'الدخول لشاشة الدائرة';
+                } else {
+                    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> تسجيل الخروج';
+                    logoutBtn.classList.remove('icon-only');
+                    logoutBtn.title = '';
+                }
+            }
+        }
+
+        function getRoleName(role) {
+            const names = {
+                manager: 'مدير النظام',
+                employee: 'موظف توزيع',
+                citizen: 'مواطن'
+            };
+            return names[role] || 'مستخدم';
+        }
+
+        function showInterface(role) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+            const target = document.getElementById(`${role}Interface`);
+            if (target) {
+                target.style.display = 'flex';
+                requestAnimationFrame(() => ensureMapInitialized(role));
+            }
+        }
+
+        function ensureMapInitialized(role) {
+            const config = maps[role];
+            if (!config) {
+                return;
+            }
+            if (!config.instance) {
+                config.instance = L.map(config.id, {
+                    zoomControl: false,
+                    attributionControl: false
+                }).setView(DEFAULT_CENTER, 12);
+
+                // Define Layers
+                // Google Satellite (No Labels) - Maps to 'base'
+                config.layers.base = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+                });
+
+                // Google Hybrid (With Labels) - Maps to 'google'
+                config.layers.google = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+                });
+
+                // Add default layer based on preference
+                const preferredType = localStorage.getItem('preferredMapType');
+                if (preferredType === 'google') {
+                    config.layers.google.addTo(config.instance);
+                    config.currentLayer = 'google';
+                } else {
+                    config.layers.base.addTo(config.instance);
+                    config.currentLayer = 'base';
+                }
+            }
+            setTimeout(() => config.instance.invalidateSize(), 50);
+            refreshMapMarkers();
+            focusOnDistributionArea(role);
+        }
+
+        function toggleMapType(role) {
+            const config = maps[role];
+            if (!config || !config.instance) return;
+
+            if (config.currentLayer === 'base') {
+                config.instance.removeLayer(config.layers.base);
+                config.instance.addLayer(config.layers.google);
+                config.currentLayer = 'google';
+                localStorage.setItem('preferredMapType', 'google');
+                showToast('تم التبديل إلى خريطة هجينة (مع عناوين)', 'info');
+            } else {
+                config.instance.removeLayer(config.layers.google);
+                config.instance.addLayer(config.layers.base);
+                config.currentLayer = 'base';
+                localStorage.setItem('preferredMapType', 'base');
+                showToast('تم التبديل إلى خريطة قمر صناعي (بدون عناوين)', 'info');
+            }
+        }
+
+        function updateUI() {
+            areas = JSON.parse(localStorage.getItem(STORAGE_KEYS.areas)) || areas;
+            schedules = JSON.parse(localStorage.getItem(STORAGE_KEYS.schedules)) || schedules;
+            employees = JSON.parse(localStorage.getItem(STORAGE_KEYS.employees)) || employees;
+
+            // DEBUG: Verify data loading
+            console.log(`Loaded ${areas.length} areas, ${schedules.length} schedules`);
+            // Debug toast removed
+            updateEmployeeList();
+            updateAreaSelects();
+            updateManagerSchedules();
+            updateQuickStats();
+            updateCitizenSchedules();
+            updateEmployeeStats();
+            refreshMapMarkers();
+            focusOnDistributionArea();
+        }
+
+        function updateEmployeeList(filter = '') {
+            const container = document.getElementById('employeesContainer');
+            container.innerHTML = '';
+            const normalizedFilter = filter.trim();
+            const filtered = employees.filter(emp =>
+                emp.name.includes(normalizedFilter) || emp.phone.includes(normalizedFilter)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#888;">لا يوجد موظفين</p>';
+            }
+
+            filtered.forEach(employee => {
+                const element = document.createElement('div');
+                element.className = 'schedule-item';
+                element.innerHTML = `
+                    <div class="schedule-header">
+                        <span class="area-name">${employee.name}</span>
+                        <span class="schedule-time">${employee.phone}</span>
+                    </div>
+                    <div class="schedule-actions" style="display:flex;gap:6px;">
+                        <button class="btn btn-small btn-primary" data-action="edit" data-id="${employee.id}">
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
+                        <button class="btn btn-small btn-secondary" data-action="delete" data-id="${employee.id}">
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    </div>
+                `;
+                container.appendChild(element);
+            });
+
+            container.onclick = (event) => {
+                const button = event.target.closest('button[data-action]');
+                if (!button) {
+                    return;
+                }
+                const employeeId = Number(button.dataset.id);
+                if (button.dataset.action === 'edit') {
+                    editEmployee(employeeId);
+                } else {
+                    deleteEmployee(employeeId);
+                }
+            };
+
+            const selects = document.querySelectorAll('select[id$="Employee"], #employeeSelect');
+            selects.forEach(select => {
+                const selectedValue = select.value;
+                select.innerHTML = '<option value="">اختر الموظف</option>';
+                employees.forEach(employee => {
+                    const option = document.createElement('option');
+                    option.value = employee.id;
+                    option.textContent = employee.name;
+                    if (selectedValue && Number(selectedValue) === employee.id) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function editEmployee(employeeId) {
+            const employee = employees.find(emp => emp.id === employeeId);
+            if (!employee) {
+                return;
+            }
+            editingEmployeeId = employeeId;
+            document.getElementById('employeeName').value = employee.name;
+            document.getElementById('employeePhone').value = employee.phone;
+            showToast('يمكنك تعديل بيانات الموظف الآن');
+        }
+
+        function deleteEmployee(employeeId) {
+            employees = employees.filter(emp => emp.id !== employeeId);
+            schedules = schedules.filter(schedule => schedule.employeeId !== employeeId);
+            if (editingEmployeeId === employeeId) {
+                editingEmployeeId = null;
+                document.getElementById('employeeName').value = '';
+                document.getElementById('employeePhone').value = '';
+            }
+            persistAll();
+            updateUI();
+            showToast('تم حذف الموظف');
+        }
+
+        function updateAreaSelects() {
+            const selects = document.querySelectorAll('select[id$="Area"], #employeeArea');
+            selects.forEach(select => {
+                const selectedValue = select.value;
+                select.innerHTML = '<option value="">اختر المنطقة</option>';
+                areas.forEach(area => {
+                    const option = document.createElement('option');
+                    option.value = area.id;
+                    option.textContent = area.name;
+                    if (selectedValue && Number(selectedValue) === area.id) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function updateManagerSchedules() {
+            const container = document.getElementById('managerSchedulesContainer');
+            container.innerHTML = '';
+            if (schedules.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#888;">لا توجد جداول بعد</p>';
+                return;
+            }
+            schedules
+                .slice()
+                .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))
+                .forEach(schedule => {
+                    const area = areas.find(a => a.id === schedule.areaId);
+                    const employee = employees.find(e => e.id === schedule.employeeId);
+                    if (!area || !employee) {
+                        return;
+                    }
+                    const element = document.createElement('div');
+                    element.className = `schedule-item ${schedule.status}`;
+                    element.innerHTML = `
+                        <div class="schedule-header">
+                            <span class="area-name">${area.name}</span>
+                            <span class="schedule-time">${schedule.startTime}</span>
+                        </div>
+                        <div class="schedule-date">
+                            <i class="far fa-calendar"></i> ${schedule.date}
+                        </div>
+                        <div class="schedule-duration">
+                            <i class="fas fa-user"></i> ${employee.name}
+                        </div>
+                        <div class="schedule-duration">
+                            <i class="fas fa-clock"></i> ${schedule.duration} ساعات
+                        </div>
+                        <div class="schedule-actions" style="display:flex;gap:6px;">
+                            <button class="btn btn-small" onclick="updateScheduleStatus(${schedule.id}, 'in-progress')">
+                                <i class="fas fa-play"></i> بدء
+                            </button>
+                            <button class="btn btn-small btn-success" onclick="updateScheduleStatus(${schedule.id}, 'completed')">
+                                <i class="fas fa-check"></i> إنهاء
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(element);
+                });
+        }
+
+        function updateQuickStats() {
+            document.getElementById('totalEmployees').textContent = employees.length;
+            document.getElementById('totalAreas').textContent = areas.length;
+            document.getElementById('totalSchedules').textContent = schedules.length;
+        }
+
+        function formatTime12Hour(timeStr) {
+            if (!timeStr || typeof timeStr !== 'string') return '--:--';
+            const parts = timeStr.split(':');
+            if (parts.length < 2) return '--:--';
+
+            let hours = parseInt(parts[0]);
+            let minutes = parseInt(parts[1]);
+
+            if (isNaN(hours) || isNaN(minutes)) return '--:--';
+
+            const period = hours >= 12 ? 'م' : 'ص';
+            const hours12 = hours % 12 || 12;
+            return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+        }
+
+        function updateCitizenSchedules() {
+            const container = document.getElementById('citizenSchedulesContainer');
+            const titleElement = document.querySelector('.citizen-layout .schedules-list h4');
+            container.innerHTML = '';
+
+            // Use local date instead of UTC
+            const now = new Date();
+            const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+
+            if (!schedules || schedules.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#888;">لا توجد جداول مسجلة في النظام</p>';
+                return;
+            }
+
+            let displaySchedules = schedules
+                .filter(schedule => schedule.date >= today)
+                .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))
+                .slice(0, 6);
+
+            let isUpcoming = true;
+
+            // Fallback: If no upcoming schedules, show the most recent ones (even if past)
+            if (displaySchedules.length === 0) {
+                isUpcoming = false;
+                displaySchedules = schedules
+                    .slice()
+                    .sort((a, b) => b.id - a.id) // Sort by ID descending (newest created first)
+                    .slice(0, 6);
+            }
+
+            // FORCE INJECT TEST SCHEDULE REMOVED
+
+            if (displaySchedules.length === 0) {
+                container.innerHTML = `<p style="text-align:center;color:#888;">لا توجد جداول (التاريخ الحالي: ${today})</p>`;
+                return;
+            }
+
+            // Update title based on what we are showing
+            if (titleElement) {
+                titleElement.innerHTML = isUpcoming
+                    ? '<i class="fas fa-clock" style="color:var(--secondary);"></i> المواعيد القادمة'
+                    : '<i class="fas fa-history" style="color:var(--text-muted);"></i> آخر المواعيد المسجلة';
+            }
+
+            displaySchedules.forEach(schedule => {
+                const area = areas.find(a => a.id === schedule.areaId);
+                const employee = employees.find(e => e.id === schedule.employeeId);
+
+                if (!area) return;
+
+                const element = document.createElement('div');
+                element.className = 'schedule-card';
+
+                // Calculate times
+                const scheduleStart = new Date(`${schedule.date}T${schedule.startTime}`);
+                const scheduleEnd = new Date(scheduleStart.getTime() + schedule.duration * 60 * 60 * 1000);
+                const nowTime = new Date();
+
+                // Format Times
+                const startTime12 = formatTime12Hour(schedule.startTime);
+                const endHours = scheduleEnd.getHours().toString().padStart(2, '0');
+                const endMinutes = scheduleEnd.getMinutes().toString().padStart(2, '0');
+                const endTime12 = formatTime12Hour(`${endHours}:${endMinutes}`);
+
+                let timeStatusHTML = '';
+                let cardBorderColor = 'var(--primary)';
+
+                if (schedule.status === 'completed') {
+                    timeStatusHTML = '<span style="color:var(--success);font-weight:bold;">مكتمل</span>';
+                    cardBorderColor = 'var(--success)';
+                } else if (nowTime >= scheduleStart && nowTime <= scheduleEnd) {
+                    // Currently active
+                    cardBorderColor = 'var(--warning)';
+                    // Add countdown data attribute
+                    timeStatusHTML = `<span class="countdown-timer" data-end="${scheduleEnd.getTime()}" style="color:var(--warning);font-weight:bold;">الوقت المتبقي لانتهاء تجهيز الماء: 00.00.00</span>`;
+                } else if (nowTime < scheduleStart) {
+                    // Future
+                    const diffMs = scheduleStart - nowTime;
+                    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                    if (diffHrs < 24) {
+                        timeStatusHTML = `<span class="countdown-timer" data-start="${scheduleStart.getTime()}" style="color:var(--primary);">يبدأ قريباً...</span>`;
+                    } else {
+                        timeStatusHTML = `<span style="color:var(--text-muted);">قادم</span>`;
+                    }
+                } else if (schedule.status === 'in-progress') {
+                    // Time passed but still marked in progress
+                    cardBorderColor = 'var(--warning)';
+                    timeStatusHTML = `<span style="color:var(--warning);font-weight:bold;">قيد التنفيذ</span>`;
+                } else {
+                    // Past and not completed (expired/pending)
+                    timeStatusHTML = `<span style="color:var(--danger);">انتهى وقت التجهيز</span>`;
+                    cardBorderColor = 'var(--text-muted)'; // Grey out past items
+                }
+
+                const isPast = schedule.date < today && schedule.status !== 'in-progress';
+                if (isPast) {
+                    element.style.opacity = '0.8';
+                    cardBorderColor = 'var(--text-muted)';
+                }
+
+                element.style.borderRight = `4px solid ${cardBorderColor}`;
+
+                element.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <h4 style="margin:0;font-size:1.1rem;">${area.name}</h4>
+                ${timeStatusHTML}
+            </div>
+            
+            <div class="schedule-card-details">
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <i class="far fa-calendar-alt" style="color:#1A535C;"></i> ${schedule.date}
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <i class="far fa-clock" style="color:#1A535C;"></i> 
+                    <span>وقت التجهيز: ${startTime12}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-hourglass-half" style="color:#1A535C;"></i> 
+                    <span>ساعات التجهيز: ${schedule.duration}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-user-tie" style="color:#1A535C;"></i> 
+                    <span style="color:#4facfe;text-decoration:none;cursor:pointer;transition:color 0.2s;" 
+                       onmouseover="this.style.color='#00f2fe'" 
+                       onmouseout="this.style.color='#4facfe'"
+                       onclick="event.stopPropagation(); window.open('employee_dashboard.html?empId=${schedule.employeeId}', '_blank'); return false;">
+                        ${employee ? employee.name : 'غير محدد'}
+                    </span>
+                </div>
+            </div>
+        `;
+                container.appendChild(element);
+            });
+
+            // Start countdown interval if not already started
+            if (!window.countdownInterval) {
+                window.countdownInterval = setInterval(updateCountdowns, 1000);
+                updateCountdowns(); // Initial call
+            }
+        }
+
+        function updateCountdowns() {
+            const now = new Date().getTime();
+            document.querySelectorAll('.countdown-timer').forEach(el => {
+                if (el.dataset.end) {
+                    const endTime = parseInt(el.dataset.end);
+                    const diff = endTime - now;
+                    if (diff > 0) {
+                        // Active countdown
+                        const hrs = Math.floor(diff / (1000 * 60 * 60));
+                        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+                        if (el.dataset.short === "true") {
+                            el.textContent = `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                        } else {
+                            el.textContent = `الوقت المتبقي لانتهاء تجهيز الماء: ${hrs.toString().padStart(2, '0')}.${mins.toString().padStart(2, '0')}.${secs.toString().padStart(2, '0')}`;
+                        }
+                        el.style.color = 'var(--warning)';
+                    } else {
+                        // Ended
+                        el.textContent = 'انتهى وقت التجهيز';
+                        el.style.color = 'var(--danger)';
+                    }
+                } else if (el.dataset.start) {
+                    const startTime = parseInt(el.dataset.start);
+                    const diff = startTime - now;
+                    if (diff <= 0) {
+                        // Should refresh to show active, but for now just show starting
+                        el.textContent = 'يبدأ الآن';
+                    } else {
+                        const hrs = Math.floor(diff / (1000 * 60 * 60));
+                        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                        el.textContent = `يبدأ خلال: ${hrs.toString().padStart(2, '0')}.${mins.toString().padStart(2, '0')}.${secs.toString().padStart(2, '0')}`;
+                    }
+                }
+            });
+        }
+
+        function handleAddOrUpdateEmployee() {
+            const nameInput = document.getElementById('employeeName');
+            const phoneInput = document.getElementById('employeePhone');
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
+            if (!name || !phone) {
+                showToast('يرجى تعبئة اسم ورقم الموظف', 'danger');
+                return;
+            }
+            if (editingEmployeeId) {
+                const employee = employees.find(emp => emp.id === editingEmployeeId);
+                if (employee) {
+                    employee.name = name;
+                    employee.phone = phone;
+                    showToast('تم تحديث بيانات الموظف');
+                }
+            } else {
+                employees.push({ id: Date.now(), name, phone });
+                showToast('تمت إضافة الموظف بنجاح');
+            }
+            editingEmployeeId = null;
+            nameInput.value = '';
+            phoneInput.value = '';
+            persistAll();
+            updateUI();
+        }
+
+        function handleAddArea() {
+            const nameInput = document.getElementById('areaName');
+            const descriptionInput = document.getElementById('areaDescription');
+            const name = nameInput.value.trim();
+            const description = descriptionInput.value.trim();
+            const x = Number(document.getElementById('areaCoordX').value);
+            const y = Number(document.getElementById('areaCoordY').value);
+            const geojson = window.drawnGeoJSON ? JSON.parse(JSON.stringify(window.drawnGeoJSON)) : null;
+
+            if (!name) {
+                showToast('يرجى إدخال اسم المنطقة', 'danger');
+                return;
+            }
+
+            let lat = y, lng = x;
+            if (!lat || !lng) {
+                if (geojson && geojson.type === 'Point') {
+                    lng = geojson.coordinates[0];
+                    lat = geojson.coordinates[1];
+                } else if (geojson && (geojson.type === 'LineString' || geojson.type === 'Polygon')) {
+                    let sumLat = 0, sumLng = 0;
+                    let coords = geojson.type === 'LineString'
+                        ? geojson.coordinates
+                        : geojson.coordinates[0];
+                    coords.forEach(([c_lng, c_lat]) => {
+                        sumLat += c_lat;
+                        sumLng += c_lng;
+                    });
+                    lng = (sumLng / coords.length).toFixed(6);
+                    lat = (sumLat / coords.length).toFixed(6);
+                } else {
+                    const coords = generateAreaCoords();
+                    lat = coords.lat;
+                    lng = coords.lng;
+                }
+            }
+
+            const newArea = {
+                id: Date.now(),
+                name,
+                description,
+                lat: parseFloat(lat),
+                lng: parseFloat(lng),
+                geojson: geojson || null
+            };
+
+            areas.push(newArea);
+
+            nameInput.value = '';
+            descriptionInput.value = '';
+            document.getElementById('areaCoordX').value = '';
+            document.getElementById('areaCoordY').value = '';
+            window.drawnGeoJSON = null;
+
+            persistAll();
+            setTimeout(() => {
+                updateUI();
+                showToast('تمت إضافة المنطقة بنجاح');
+            }, 100);
+        }
+
+        function handleAddSchedule() {
+            const areaId = Number(document.getElementById('scheduleArea').value);
+            const employeeId = Number(document.getElementById('scheduleEmployee').value);
+            const date = document.getElementById('scheduleDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const duration = Number(document.getElementById('duration').value) || 1;
+            if (!areaId || !employeeId || !date || !startTime) {
+                showToast('يرجى تعبئة جميع الحقول', 'danger');
+                return;
+            }
+            schedules.push({
+                id: Date.now(),
+                areaId,
+                employeeId,
+                date,
+                startTime,
+                duration,
+                status: 'pending'
+            });
+            persistAll();
+            updateUI();
+            document.getElementById('scheduleArea').value = '';
+            document.getElementById('scheduleEmployee').value = '';
+            document.getElementById('startTime').value = '';
+            document.getElementById('duration').value = 4;
+            showToast('تم إضافة جدول التوزيع');
+        }
+
+        function handleEmployeeSelection(event) {
+            const employeeId = Number(event.target.value);
+            updateEmployeeAreaSelect(employeeId);
+            updateEmployeeSchedules(employeeId);
+            updateEmployeeStats();
+            refreshMapMarkers();
+        }
+
+        function handleEmployeeAreaSelection(event) {
+            const areaId = Number(event.target.value);
+            if (areaId && maps.employee.instance) {
+                areas = JSON.parse(localStorage.getItem(STORAGE_KEYS.areas)) || areas;
+                const area = areas.find(a => a.id === areaId);
+
+                if (area) {
+                    let centerLat = area.lat;
+                    let centerLng = area.lng;
+
+                    if (area.geojson) {
+                        const geoJson = area.geojson;
+                        if (geoJson.type === 'Point') {
+                            centerLng = geoJson.coordinates[0];
+                            centerLat = geoJson.coordinates[1];
+                        } else if (geoJson.type === 'LineString' || geoJson.type === 'Polygon') {
+                            let sumLat = 0, sumLng = 0;
+                            const coords = geoJson.type === 'LineString'
+                                ? geoJson.coordinates
+                                : geoJson.coordinates[0];
+                            coords.forEach(([lng, lat]) => {
+                                sumLat += lat;
+                                sumLng += lng;
+                            });
+                            centerLng = sumLng / coords.length;
+                            centerLat = sumLat / coords.length;
+                        }
+                    }
+
+                    maps.employee.instance.setView([centerLat, centerLng], 14);
+                    showToast(`تم التركيز على منطقة: ${area.name}`);
+                }
+            }
+            refreshMapMarkers();
+        }
+
+        function updateEmployeeAreaSelect(employeeId) {
+            const select = document.getElementById('employeeArea');
+            select.innerHTML = '<option value="">لا توجد مناطق</option>';
+            if (!employeeId) {
+                return;
+            }
+            const employeeSchedules = schedules.filter(schedule => schedule.employeeId === employeeId);
+            const uniqueAreaIds = [...new Set(employeeSchedules.map(schedule => schedule.areaId))];
+            if (uniqueAreaIds.length === 0) {
+                return;
+            }
+            select.innerHTML = '<option value="">اختر المنطقة</option>';
+            uniqueAreaIds.forEach(areaId => {
+                const area = areas.find(a => a.id === areaId);
+                if (!area) {
+                    return;
+                }
+                const option = document.createElement('option');
+                option.value = area.id;
+                option.textContent = area.name;
+                select.appendChild(option);
+            });
+        }
+
+        function updateEmployeeSchedules(employeeId) {
+            const container = document.getElementById('employeeSchedulesContainer');
+            container.innerHTML = '';
+            if (!employeeId) {
+                container.innerHTML = '<p style="text-align:center;color:#888;">اختر موظف لعرض جداولك</p>';
+                return;
+            }
+            const employeeSchedules = schedules.filter(schedule => schedule.employeeId === employeeId);
+            if (employeeSchedules.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#888;">لا توجد جداول</p>';
+                return;
+            }
+            employeeSchedules.forEach(schedule => {
+                const area = areas.find(a => a.id === schedule.areaId);
+                if (!area) {
+                    return;
+                }
+                const element = document.createElement('div');
+                element.className = `schedule-item ${schedule.status}`;
+                element.innerHTML = `
+                    <div class="schedule-header">
+                        <span class="area-name">${area.name}</span>
+                        <span class="schedule-time">${schedule.startTime}</span>
+                    </div>
+                    <div class="schedule-date"><i class="far fa-calendar"></i> ${schedule.date}</div>
+                    <div class="schedule-duration"><i class="fas fa-clock"></i> ${schedule.duration} ساعات</div>
+                    <div class="schedule-actions" style="display:flex;gap:6px;">
+                        <button class="btn btn-small" onclick="updateScheduleStatus(${schedule.id}, 'in-progress')"><i class="fas fa-play"></i> بدء</button>
+                        <button class="btn btn-small btn-success" onclick="updateScheduleStatus(${schedule.id}, 'completed')"><i class="fas fa-check"></i> إنهاء</button>
+                    </div>
+                `;
+                container.appendChild(element);
+            });
+        }
+
+        function handleEmployeeScheduleUpdate() {
+            const employeeId = Number(document.getElementById('employeeSelect').value);
+            const areaId = Number(document.getElementById('employeeArea').value);
+            const newTime = document.getElementById('employeeScheduleTime').value;
+            const newDuration = Number(document.getElementById('employeeDuration').value) || 1;
+            if (!employeeId || !areaId || !newTime) {
+                showToast('يرجى اختيار الموظف والمنطقة وتحديد الوقت', 'danger');
+                return;
+            }
+            const schedule = schedules.find(s => s.employeeId === employeeId && s.areaId === areaId);
+            if (!schedule) {
+                showToast('لا يوجد جدول مرتبط بهذه الخيارات', 'danger');
+                return;
+            }
+            schedule.startTime = newTime;
+            schedule.duration = newDuration;
+            persistAll();
+            updateUI();
+            showToast('تم تحديث الجدول');
+        }
+
+        function persistAll() {
+            // Save to local storage as backup/cache
+            localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(employees));
+            localStorage.setItem(STORAGE_KEYS.areas, JSON.stringify(areas));
+            localStorage.setItem(STORAGE_KEYS.schedules, JSON.stringify(schedules));
+
+            // Save to Firebase (Real-time)
+            saveAllData(areas, employees, schedules).catch(err => {
+                console.error("Failed to sync to Firebase:", err);
+                showToast("فشل الحفظ السحابي، تأكد من الإنترنت", "danger");
+            });
+        }
+
+        function updateEmployeeStats() {
+            const employeeId = Number(document.getElementById('employeeSelect').value);
+            const completedEl = document.getElementById('employeeCompleted');
+            const pendingEl = document.getElementById('employeePending');
+            const totalEl = document.getElementById('employeeTotal');
+            if (!employeeId) {
+                completedEl.textContent = '0';
+                pendingEl.textContent = '0';
+                totalEl.textContent = '0';
+                return;
+            }
+            const employeeSchedules = schedules.filter(schedule => schedule.employeeId === employeeId);
+            const completed = employeeSchedules.filter(schedule => schedule.status === 'completed').length;
+            const pending = employeeSchedules.filter(schedule => schedule.status !== 'completed').length;
+            completedEl.textContent = completed;
+            pendingEl.textContent = pending;
+            totalEl.textContent = employeeSchedules.length;
+        }
+
+        function updateScheduleStatus(scheduleId, status) {
+            const schedule = schedules.find(s => s.id === scheduleId);
+            if (!schedule) {
+                return;
+            }
+            schedule.status = status;
+            persistAll();
+            updateUI();
+            showToast('تم تحديث حالة الجدول');
+        }
+
+        function focusOnDistributionArea(mapRole = null) {
+            const storedAreas = localStorage.getItem(STORAGE_KEYS.areas);
+            const latestAreas = storedAreas ? JSON.parse(storedAreas) : areas;
+
+            const rolesMap = mapRole ? [mapRole] : Object.keys(maps);
+            rolesMap.forEach(role => {
+                const config = maps[role];
+                if (!config || !config.instance) {
+                    return;
+                }
+
+                // Prioritize 'in-progress' schedules, then fallback to any non-completed
+                let targetSchedules = schedules.filter(s => s.status === 'in-progress');
+                if (targetSchedules.length === 0) {
+                    targetSchedules = schedules.filter(s => s.status !== 'completed');
+                }
+
+                if (targetSchedules.length === 0) {
+                    return;
+                }
+
+                const targetAreas = latestAreas.filter(area =>
+                    targetSchedules.some(s => s.areaId === area.id)
+                );
+
+                if (targetAreas.length === 0) {
+                    return;
+                }
+
+                const bounds = L.latLngBounds();
+                let hasBounds = false;
+
+                targetAreas.forEach(area => {
+                    if (area.geojson) {
+                        const geoJson = area.geojson;
+                        if (geoJson.type === 'Point') {
+                            bounds.extend([geoJson.coordinates[1], geoJson.coordinates[0]]);
+                            hasBounds = true;
+                        } else if (geoJson.type === 'LineString') {
+                            geoJson.coordinates.forEach(([lng, lat]) => bounds.extend([lat, lng]));
+                            hasBounds = true;
+                        } else if (geoJson.type === 'Polygon') {
+                            geoJson.coordinates[0].forEach(([lng, lat]) => bounds.extend([lat, lng]));
+                            hasBounds = true;
+                        }
+                    } else if (area.lat && area.lng) {
+                        bounds.extend([area.lat, area.lng]);
+                        hasBounds = true;
+                    }
+                });
+
+                if (hasBounds) {
+                    config.instance.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+                }
+            });
+        }
+
+        function getNeonColor(id, offset = 0) {
+            // Generate a hash from the string
+            let hash = 0;
+            const str = id.toString();
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+
+            // Use hash to determine Hue (0-360)
+            // Add offset to create different colors for fill vs border for the same ID
+            const hue = Math.abs((hash + offset) % 360);
+
+            // Return HSL color: High Saturation (100%) and Lightness (50%) for Neon look
+            return `hsl(${hue}, 100%, 50%)`;
+        }
+
+        function refreshMapMarkers() {
+            const storedAreas = localStorage.getItem(STORAGE_KEYS.areas);
+            const latestAreas = storedAreas ? JSON.parse(storedAreas) : areas;
+
+            function getPopupContent(area, schedule, employee) {
+                return `
+                        <div style="text-align:right;">
+                            <h4>${area.name}</h4>
+                            ${area.description ? `<p><strong>الوصف:</strong> ${area.description}</p>` : ''}
+                            <p><strong>الموعد:</strong> ${schedule.date} - ${schedule.startTime}</p>
+                            <p><strong>الموظف:</strong> ${employee ? employee.name : 'غير محدد'}</p>
+                            <p><strong>المدة:</strong> ${schedule.duration} ساعة</p>
+                            <p><strong>الحالة:</strong> ${getStatusText(schedule.status)}</p>
+                        </div>
+                    `;
+            }
+
+            Object.values(maps).forEach(config => {
+                if (!config.instance) {
+                    return;
+                }
+                config.markers.forEach(marker => {
+                    if (marker.remove) marker.remove();
+                });
+                config.markers = [];
+
+                const renderedAreas = new Set();
+
+                try {
+                    schedules.forEach(schedule => {
+                        const area = latestAreas.find(a => a.id === schedule.areaId);
+                        const employee = employees.find(e => e.id === schedule.employeeId);
+                        if (!area) {
+                            return;
+                        }
+
+                        // User Request: Hide completed areas from the map
+                        if (schedule.status === 'completed') {
+                            return;
+                        }
+
+                        // NEW LOGIC: For Citizen Map, ONLY show if currently active (during preparation hours)
+                        let labelHtml = '';
+                        let shouldShowLabel = false;
+                        let scheduleEnd = null;
+
+                        if (config.id === 'citizenMap') {
+                            const scheduleStart = new Date(`${schedule.date}T${schedule.startTime}`);
+                            scheduleEnd = new Date(scheduleStart.getTime() + schedule.duration * 60 * 60 * 1000);
+                            const now = new Date();
+
+                            // Check if current time is within the window OR if status is explicitly in-progress
+                            const isTimeWindow = now >= scheduleStart && now <= scheduleEnd;
+                            const isInProgress = schedule.status === 'in-progress';
+
+                            // STRICT FIX: If the time has passed, do NOT show it on Citizen Map, even if status is in-progress.
+                            // The user wants drawings to disappear immediately after time ends.
+                            if (now > scheduleEnd) {
+                                return;
+                            }
+
+                            if (!isTimeWindow && !isInProgress) {
+                                return; // Skip this schedule for citizen map
+                            }
+
+                            shouldShowLabel = true;
+
+                            // Prepare label HTML
+                            if (isInProgress) {
+                                // If in-progress (whether in time or overtime), show "In Progress" or countdown if preferred.
+                                // For clarity, let's show "In Progress" if it's active. 
+                                // Or if user wants countdown, we can keep it. 
+                                // If it is overtime but in-progress, countdown would show "Ended".
+                                // Let's handle overtime in-progress specifically.
+                                if (!isTimeWindow && now > scheduleEnd) {
+                                    labelHtml = `
+                                    <div class="map-countdown-pill">
+                                        <div class="map-pill-name">${area.name}</div>
+                                        <div class="map-pill-timer">قيد التجهيز</div>
+                                    </div>
+                                `;
+                                } else {
+                                    // Normal countdown
+                                    labelHtml = `
+                                    <div class="map-countdown-pill">
+                                        <div class="map-pill-name">${area.name}</div>
+                                        <div class="countdown-timer map-pill-timer" data-end="${scheduleEnd.getTime()}" data-short="true">--:--:--</div>
+                                    </div>
+                                `;
+                                }
+                            } else {
+                                // Future schedule (since we filtered out past ones unless in-progress)
+                                labelHtml = `
+                                <div class="map-countdown-pill" style="background: var(--primary);">
+                                    <div class="map-pill-name">${area.name}</div>
+                                    <div class="countdown-timer map-pill-timer" data-start="${scheduleStart.getTime()}" data-short="true">--:--:--</div>
+                                </div>
+                            `;
+                            }
+                        }
+
+                        renderedAreas.add(area.id);
+
+                        renderedAreas.add(area.id);
+
+                        // Use unique neon colors for fill and border
+                        // Offset border hue by 180 degrees (complementary) or just a fixed shift for contrast
+                        const fillColor = getNeonColor(area.id, 0);
+                        const borderColor = getNeonColor(area.id, 60); // Shift by 60 degrees for distinct border
+
+                        if (area.geojson) {
+                            const geoJson = area.geojson;
+
+                            if (geoJson.type === 'Point') {
+                                const marker = L.circleMarker([geoJson.coordinates[1], geoJson.coordinates[0]], {
+                                    radius: 8,
+                                    fillColor: fillColor,
+                                    color: borderColor,
+                                    weight: 2, // Reduced from 3
+                                    opacity: 1,
+                                    fillOpacity: 0.6
+                                }).addTo(config.instance);
+                                marker.bindPopup(getPopupContent(area, schedule, employee));
+                                config.markers.push(marker);
+
+                                if (shouldShowLabel) {
+                                    const center = marker.getLatLng();
+                                    const labelMarker = L.marker(center, {
+                                        icon: L.divIcon({ className: '', html: '', iconSize: [0, 0] }),
+                                        interactive: false,
+                                        zIndexOffset: 1000
+                                    }).addTo(config.instance);
+                                    labelMarker.bindTooltip(labelHtml, {
+                                        permanent: true,
+                                        direction: 'center',
+                                        className: 'custom-map-tooltip',
+                                        opacity: 1
+                                    });
+                                    config.markers.push(labelMarker);
+                                }
+
+                            } else if (geoJson.type === 'LineString') {
+                                const line = L.polyline(
+                                    geoJson.coordinates.map(([lng, lat]) => [lat, lng]),
+                                    { color: borderColor, weight: 3, opacity: 1 } // Reduced from 4
+                                ).addTo(config.instance);
+                                line.bindPopup(getPopupContent(area, schedule, employee));
+                                config.markers.push(line);
+
+                                if (shouldShowLabel) {
+                                    const center = line.getCenter();
+                                    const labelMarker = L.marker(center, {
+                                        icon: L.divIcon({ className: '', html: '', iconSize: [0, 0] }),
+                                        interactive: false,
+                                        zIndexOffset: 1000
+                                    }).addTo(config.instance);
+                                    labelMarker.bindTooltip(labelHtml, {
+                                        permanent: true,
+                                        direction: 'center',
+                                        className: 'custom-map-tooltip',
+                                        opacity: 1
+                                    });
+                                    config.markers.push(labelMarker);
+                                }
+
+                            } else if (geoJson.type === 'Polygon') {
+                                const polygon = L.polygon(
+                                    geoJson.coordinates[0].map(([lng, lat]) => [lat, lng]),
+                                    {
+                                        color: borderColor,     // Unique neon border
+                                        weight: 2,              // Reduced from 3
+                                        opacity: 1,             // Fully visible border
+                                        fillColor: fillColor,   // Unique neon fill
+                                        fillOpacity: 0.4        // Translucent fill
+                                    }
+                                ).addTo(config.instance);
+                                polygon.bindPopup(getPopupContent(area, schedule, employee));
+                                config.markers.push(polygon);
+
+                                if (shouldShowLabel) {
+                                    const center = polygon.getBounds().getCenter();
+                                    const labelMarker = L.marker(center, {
+                                        icon: L.divIcon({ className: '', html: '', iconSize: [0, 0] }),
+                                        interactive: false,
+                                        zIndexOffset: 1000
+                                    }).addTo(config.instance);
+                                    labelMarker.bindTooltip(labelHtml, {
+                                        permanent: true,
+                                        direction: 'center',
+                                        className: 'custom-map-tooltip',
+                                        opacity: 1
+                                    });
+                                    config.markers.push(labelMarker);
+                                }
+                            }
+                        } else {
+                            // User requested to remove the fallback circle for areas without drawings
+                            // Do nothing if no GeoJSON is present
+                        }
+
+                    });
+                } catch (e) {
+                    console.error('Error rendering map markers:', e);
+                    showToast('خطأ في رسم الخريطة: ' + e.message, 'error');
+                }
+
+
+
+                if (config.id === 'employeeMap') {
+                    const selectedAreaId = Number(document.getElementById('employeeArea').value);
+                    if (selectedAreaId && !renderedAreas.has(selectedAreaId)) {
+                        const area = latestAreas.find(a => a.id === selectedAreaId);
+                        if (area) {
+                            const geoJson = area.geojson;
+                            const color = '#3498db';
+
+                            if (geoJson) {
+                                if (geoJson.type === 'Point') {
+                                    const marker = L.circleMarker([geoJson.coordinates[1], geoJson.coordinates[0]], {
+                                        radius: 8,
+                                        fillColor: color,
+                                        color: 'white',
+                                        weight: 2,
+                                        opacity: 1,
+                                        fillOpacity: 0.8
+                                    }).addTo(config.instance);
+                                    marker.bindPopup(`<div style="text-align:right;"><h4>${area.name}</h4><p>منطقة محددة للموظف</p></div>`);
+                                    marker.bindTooltip(area.name, { permanent: true, direction: 'top' });
+                                    config.markers.push(marker);
+                                } else if (geoJson.type === 'LineString') {
+                                    const line = L.polyline(
+                                        geoJson.coordinates.map(([lng, lat]) => [lat, lng]),
+                                        { color: color, weight: 3, opacity: 0.8 }
+                                    ).addTo(config.instance);
+                                    line.bindPopup(`<div style="text-align:right;"><h4>${area.name}</h4><p>منطقة محددة للموظف</p></div>`);
+                                    line.bindTooltip(area.name, { permanent: true, direction: 'center' });
+                                    config.markers.push(line);
+                                } else if (geoJson.type === 'Polygon') {
+                                    const polygon = L.polygon(
+                                        geoJson.coordinates[0].map(([lng, lat]) => [lat, lng]),
+                                        {
+                                            color: color,
+                                            weight: 2,
+                                            fillColor: color,
+                                            fillOpacity: 0.3
+                                        }
+                                    ).addTo(config.instance);
+                                    polygon.bindPopup(`<div style="text-align:right;"><h4>${area.name}</h4><p>منطقة محددة للموظف</p></div>`);
+                                    polygon.bindTooltip(area.name, { permanent: true, direction: 'center' });
+                                    config.markers.push(polygon);
+                                }
+                            } else {
+                                // User requested to remove the fallback circle
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                pending: 'معلق',
+                'in-progress': 'قيد التنفيذ',
+                completed: 'مكتمل'
+            };
+            return statusMap[status] || 'معلق';
+        }
+
+        function generateAreaCoords() {
+            const lat = DEFAULT_CENTER[0] + (Math.random() - 0.5) * 0.2;
+            const lng = DEFAULT_CENTER[1] + (Math.random() - 0.5) * 0.2;
+            return { lat, lng };
+        }
+
+        function handleSendNotifications() {
+            const message = document.getElementById('notificationMessage').value.trim();
+            if (!message) {
+                showToast('يرجى كتابة نص الإشعار', 'danger');
+                return;
+            }
+            showToast('جاري إرسال الإشعارات...');
+            setTimeout(() => {
+                showToast('تم إرسال الإشعارات بنجاح');
+                document.getElementById('notificationMessage').value = '';
+                toggleNotificationModal(false);
+            }, 1500);
+        }
+
+        // Notification Logic
+        function attachNotificationHandlers() {
+            const headerBtn = document.getElementById('headerBroadcastBtn');
+            const empBtn = document.getElementById('employeeBroadcastBtn');
+            const modal = document.getElementById('notificationModal');
+            const close = document.getElementById('closeNotificationModal');
+            const select = document.getElementById('notifyScheduleSelect');
+            const msg = document.getElementById('notificationMessage');
+            const send = document.getElementById('confirmSend');
+            const tabs = document.querySelectorAll('.nc-tab');
+            const typeRadios = document.querySelectorAll('input[name="notifType"]');
+
+            const openModal = () => {
+                modal.style.display = 'flex';
+                try { populateNotificationSchedules(); } catch (e) { }
+                // Force update message to ensure time format is correct
+                setTimeout(updateMessage, 100);
+                populateNotificationHistory();
+            };
+
+            if (headerBtn) headerBtn.addEventListener('click', openModal);
+            if (empBtn) empBtn.addEventListener('click', openModal);
+
+            if (close) close.addEventListener('click', () => modal.style.display = 'none');
+
+            // Tab Switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    if (tab.dataset.tab === 'new') {
+                        document.getElementById('ncTabNew').style.display = 'block';
+                        document.getElementById('ncTabHistory').style.display = 'none';
+                    } else {
+                        document.getElementById('ncTabNew').style.display = 'none';
+                        document.getElementById('ncTabHistory').style.display = 'block';
+                        populateNotificationHistory();
+                    }
+                });
+            });
+
+            const updateMessage = () => {
+                const scheduleId = Number(select.value);
+                const schedule = schedules.find(s => s.id === scheduleId);
+                const type = document.querySelector('input[name="notifType"]:checked').value;
+
+                if (schedule) {
+                    const area = areas.find(a => a.id === schedule.areaId);
+                    if (area) {
+                        if (type === 'start') {
+                            // Convert 24h time to 12h time
+                            let timeDisplay = schedule.startTime || 'الآن';
+                            if (timeDisplay !== 'الآن') {
+                                try {
+                                    const [hours, minutes] = timeDisplay.split(':');
+                                    const date = new Date();
+                                    date.setHours(hours);
+                                    date.setMinutes(minutes);
+                                    timeDisplay = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                                } catch (e) { }
+                            }
+                            msg.value = `تنويه: بدء توزيع المياه في ${area.name}\n\nوقت البدء: ${timeDisplay}\n\nمدة التجهيز: ${schedule.duration} ساعة`;
+                        } else if (type === 'end') {
+                            msg.value = `تنويه: انتهاء توزيع المياه في ${area.name}\nشكراً لتعاونكم.`;
+                        }
+                    }
+                } else {
+                    msg.value = '';
+                }
+            };
+
+            if (select) select.addEventListener('change', updateMessage);
+            typeRadios.forEach(radio => radio.addEventListener('change', updateMessage));
+
+            if (send) send.addEventListener('click', () => {
+                if (!msg.value.trim()) {
+                    showToast('الرجاء إدخال نص الإشعار', 'danger');
+                    return;
+                }
+
+                const durationHours = Number(document.getElementById('notificationDuration').value) || 24;
+                const expiresAt = Date.now() + (durationHours * 60 * 60 * 1000);
+
+                // Create Notification Object
+                const notification = {
+                    id: Date.now(),
+                    message: msg.value,
+                    timestamp: new Date().getTime(),
+                    expiresAt: expiresAt,
+                    read: false
+                };
+
+                // Send via Firebase
+                broadcastNotification(notification).then(() => {
+                    showToast('تم إرسال الإشعار للجميع بنجاح');
+                    modal.style.display = 'none';
+                    msg.value = ''; // Clear input
+                }).catch(err => {
+                    console.error("Notification failed:", err);
+                    showToast('فشل إرسال الإشعار', 'danger');
+                });
+            });
+        }
+
+        function populateNotificationHistory() {
+            const list = document.getElementById('notificationHistoryList');
+            const raw = localStorage.getItem('waterNotifications');
+            let notifs = raw ? JSON.parse(raw) : [];
+
+            // Filter out expired notifications
+            const now = Date.now();
+            const validNotifs = notifs.filter(n => !n.expiresAt || n.expiresAt > now);
+
+            // Update storage if items were removed
+            if (validNotifs.length !== notifs.length) {
+                localStorage.setItem('waterNotifications', JSON.stringify(validNotifs));
+                notifs = validNotifs;
+            }
+
+            if (notifs.length === 0) {
+                list.innerHTML = '<p style="text-align:center;color:#999;">لا يوجد سجل إشعارات</p>';
+                return;
+            }
+
+            list.innerHTML = '';
+            // Show latest first
+            notifs.slice().reverse().forEach(n => {
+                // Use 'en-GB' for Gregorian Date (DD/MM/YYYY) and 'en-US' for 12-hour time
+                const dateObj = new Date(n.timestamp);
+                const dateStr = dateObj.toLocaleDateString('en-GB');
+                const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                const date = `${dateStr} ${timeStr}`;
+
+                let expiryText = '';
+                if (n.expiresAt) {
+                    const expiryDateObj = new Date(n.expiresAt);
+                    const expDateStr = expiryDateObj.toLocaleDateString('en-GB');
+                    const expTimeStr = expiryDateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    expiryText = `<div style="font-size:0.75rem;color:#94a3b8;margin-top:5px;"><i class="fas fa-hourglass-end"></i> ينتهي في: ${expDateStr} ${expTimeStr}</div>`;
+                }
+
+                const item = document.createElement('div');
+                item.className = 'nc-history-item';
+                item.innerHTML = `
+                    <div class="nc-card-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div class="nc-icon-wrapper"><i class="fas fa-bell"></i></div>
+                            <span style="font-weight:600;color:#1e293b;">إشعار جديد</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div class="nc-history-time"><i class="far fa-clock"></i> ${date}</div>
+                        </div>
+                    </div>
+                    <div class="nc-card-body">
+                        ${n.message}
+                        ${expiryText}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+
+
+        function toggleAdminModal(show) {
+            const modal = document.getElementById('adminCodeModal');
+            const input = document.getElementById('adminCodeInput');
+            const targetLabel = document.getElementById('adminTargetLabel');
+            modal.style.display = show ? 'block' : 'none';
+            if (show) {
+                // if this modal was opened for a specific employee, show label
+                const targetId = input && input.dataset && input.dataset.targetEmp ? Number(input.dataset.targetEmp) : null;
+                if (targetId) {
+                    const emp = employees.find(e => e.id === targetId);
+                    if (emp && targetLabel) {
+                        targetLabel.textContent = `تسجيل دخول لـ: ${emp.name}`;
+                        targetLabel.style.display = 'block';
+                    }
+                } else if (targetLabel) {
+                    targetLabel.style.display = 'none';
+                }
+                if (input) input.focus();
+            } else {
+                if (input) {
+                    input.value = '';
+                    try { delete input.dataset.targetEmp; } catch (e) { }
+                    try { delete input.dataset.source; } catch (e) { }
+                }
+                if (targetLabel) targetLabel.style.display = 'none';
+            }
+        }
+
+        function toggleEmployeeListPopup(show, anchorEl) {
+            const popup = document.getElementById('employeeListPopup');
+            if (!popup) return;
+            if (show) {
+                populateEmployeeList();
+                popup.style.display = 'block';
+                popup.setAttribute('aria-hidden', 'false');
+                // position popup under anchor
+                if (anchorEl) {
+                    const rect = anchorEl.getBoundingClientRect();
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    popup.style.top = (rect.bottom + scrollTop + 8) + 'px';
+                    popup.style.left = (rect.left) + 'px';
+                }
+            } else {
+                popup.style.display = 'none';
+                popup.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        function populateEmployeeList() {
+            const container = document.getElementById('employeeListItems');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!employees || employees.length === 0) {
+                container.innerHTML = '<div class="item"><div class="small">لا يوجد موظفين</div></div>';
+                return;
+            }
+            // sort employees by name
+            const list = employees.slice().sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+            // apply current search filter if any
+            const searchInput = document.getElementById('employeeSearchPopup');
+            const filter = searchInput && searchInput.value ? searchInput.value.trim().toLowerCase() : '';
+            list.forEach(emp => {
+                if (filter) {
+                    const hay = (emp.name + ' ' + emp.phone).toLowerCase();
+                    if (!hay.includes(filter)) return;
+                }
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerHTML = `<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;">
+                    <div class="icon"><i class="fas fa-user"></i></div>
+                    <div style=\"display:flex;flex-direction:column;align-items:flex-end;\">\n                    <span class=\"title\">${emp.name}</span>\n                    <span class=\"small\">${emp.phone}</span>\n                </div>\n                </div>\n                <div>\n                    <button class=\"btn btn-small\" data-empid=\"${emp.id}\">اختيار</button>\n                </div>`;
+                container.appendChild(div);
+            });
+            // attach click handlers on the buttons
+            container.querySelectorAll('button[data-empid]').forEach(btn => {
+                btn.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    const id = Number(btn.getAttribute('data-empid'));
+                    // open code modal and hint which employee was selected
+                    const selected = employees.find(e => e.id === id);
+                    const input = document.getElementById('adminCodeInput');
+                    if (input && selected) {
+                        input.value = '';
+                        input.placeholder = `أدخل رمز الموظف لـ ${selected.name}`;
+                        input.dataset.targetEmp = String(selected.id);
+                        input.dataset.source = 'employee';
+                    }
+                    toggleEmployeeListPopup(false);
+                    toggleAdminModal(true);
+                });
+            });
+        }
+
+        // Attach search handler for popup
+        const empSearchPopup = document.getElementById('employeeSearchPopup');
+        if (empSearchPopup) {
+            empSearchPopup.addEventListener('input', () => populateEmployeeList());
+        }
+
+        function toggleNotificationModal(show) {
+            document.getElementById('notificationModal').style.display = show ? 'flex' : 'none';
+        }
+
+        /* Area editor functions */
+        function openAreaEditor() {
+            toggleAreaEditor(true);
+        }
+        function toggleAreaEditor(show) {
+            const modal = document.getElementById('areaEditorModal');
+            if (!modal) return;
+            modal.style.display = show ? 'flex' : 'none';
+            if (show) {
+                populateAreaEditorSelect();
+            } else {
+                const sel = document.getElementById('areaEditorSelect');
+                const name = document.getElementById('areaEditorName');
+                const desc = document.getElementById('areaEditorDesc');
+                if (sel) sel.value = '';
+                if (name) name.value = '';
+                if (desc) desc.value = '';
+            }
+        }
+
+        function populateAreaEditorSelect() {
+            const sel = document.getElementById('areaEditorSelect');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">اختر المنطقة لتعديلها</option>';
+            areas.slice().sort((a, b) => a.name.localeCompare(b.name, 'ar')).forEach(area => {
+                const opt = document.createElement('option');
+                opt.value = area.id;
+                opt.textContent = area.name;
+                sel.appendChild(opt);
+            });
+        }
+
+        function onAreaEditorSelectChange(event) {
+            const id = Number(event.target.value);
+            const name = document.getElementById('areaEditorName');
+            const desc = document.getElementById('areaEditorDesc');
+            if (!id) {
+                if (name) name.value = '';
+                if (desc) desc.value = '';
+                return;
+            }
+            const area = areas.find(a => a.id === id);
+            if (!area) return;
+            if (name) name.value = area.name || '';
+            if (desc) desc.value = area.description || '';
+        }
+
+        function saveAreaEdit() {
+            const sel = document.getElementById('areaEditorSelect');
+            const nameEl = document.getElementById('areaEditorName');
+            const descEl = document.getElementById('areaEditorDesc');
+            if (!sel || !nameEl) return;
+            const id = Number(sel.value);
+            const name = (nameEl.value || '').trim();
+            const desc = (descEl.value || '').trim();
+            if (!id) { showToast('اختر المنطقة أولاً', 'danger'); return; }
+            if (!name) { showToast('يجب إدخال اسم المنطقة', 'danger'); return; }
+            const area = areas.find(a => a.id === id);
+            if (!area) { showToast('المنطقة غير موجودة', 'danger'); return; }
+            area.name = name;
+            area.description = desc;
+            persistAll();
+            updateUI();
+            toggleAreaEditor(false);
+            showToast('تم حفظ التغييرات على المنطقة');
+        }
+
+        function deleteArea() {
+            const sel = document.getElementById('areaEditorSelect');
+            if (!sel) return;
+            const id = Number(sel.value);
+            if (!id) { showToast('اختر المنطقة أولاً', 'danger'); return; }
+            // Remove area and any schedules for it
+            areas = areas.filter(a => a.id !== id);
+            schedules = schedules.filter(s => s.areaId !== id);
+            persistAll();
+            updateUI();
+            toggleAreaEditor(false);
+            showToast('تم حذف المنطقة وجميع الجداول المرتبطة بها');
+        }
+
+        function verifyAdminCode() {
+            const input = document.getElementById('adminCodeInput');
+            const code = (input.value || '').trim();
+            if (!code) {
+                showToast('ادخل رمز صالح', 'danger');
+                return;
+            }
+
+            // Manager code matches ADMIN_CODE
+            if (code === ADMIN_CODE) {
+                const targetEmpId = input.dataset.targetEmp ? Number(input.dataset.targetEmp) : null;
+                const source = input.dataset.source || null;
+                // If modal targets a specific employee (selected from popup) or it was opened from the employee path,
+                // manager code should open employee panel.
+                if (targetEmpId || source === 'employee') {
+                    // If a specific employee selected, open that employee; otherwise open generic employee panel
+                    let employee = null;
+                    if (targetEmpId) employee = employees.find(emp => emp.id === targetEmpId) || null;
+
+                    toggleAdminModal(false);
+                    try { localStorage.setItem('showLogin', 'false'); } catch (e) { }
+                    if (employee) {
+                        currentEmployeeId = employee.id;
+                        const loginScreenEl = document.getElementById('loginScreen');
+                        const mainAppEl = document.getElementById('mainApp');
+                        if (loginScreenEl) loginScreenEl.style.display = 'none';
+                        if (mainAppEl) mainAppEl.style.display = 'flex';
+
+                        const employeeSelectEl = document.getElementById('employeeSelect');
+                        if (employeeSelectEl) employeeSelectEl.value = employee.id;
+                    } else {
+                        currentEmployeeId = null;
+                        const loginScreenEl = document.getElementById('loginScreen');
+                        const mainAppEl = document.getElementById('mainApp');
+                        if (loginScreenEl) loginScreenEl.style.display = 'none';
+                        if (mainAppEl) mainAppEl.style.display = 'flex';
+                        const userRoleDisplay = document.getElementById('userRoleDisplay');
+                        if (userRoleDisplay) userRoleDisplay.textContent = 'لوحة تحكم الموظف';
+                    }
+                    // Keep main page on citizen interface
+                    showInterface('citizen');
+                    ensureMapInitialized('citizen');
+                    updateUI();
+                    try { delete document.getElementById('adminCodeInput').dataset.targetEmp; } catch (e) { }
+                    try { delete document.getElementById('adminCodeInput').dataset.source; } catch (e) { }
+                    showToast('تم فتح لوحة تحكم الموظف');
+                    return;
+                }
+
+                // Otherwise open manager dashboard in a new popup
+                toggleAdminModal(false);
+                try { localStorage.setItem('showLogin', 'false'); } catch (e) { }
+                currentEmployeeId = null;
+
+                // Open in new window
+                // Open in new tab
+                window.managerPopup = window.open('manager_dashboard.html', '_blank');
+
+                // In main window, show manager map (full screen)
+                login('manager');
+                return;
+            }
+            // If the modal had a target employee selected, prefer verifying against that employee
+            const targetEmpId = input.dataset.targetEmp ? Number(input.dataset.targetEmp) : null;
+            let employee = null;
+            if (targetEmpId) {
+                employee = employees.find(emp => emp.id === targetEmpId);
+                // also accept code matching phone or id even if target was set
+                if (employee && (employee.phone === code || String(employee.id) === code)) {
+                    // good
+                } else {
+                    // fall back to global search
+                    employee = employees.find(emp => emp.phone === code || String(emp.id) === code) || null;
+                }
+            } else {
+                employee = employees.find(emp => emp.phone === code || String(emp.id) === code);
+            }
+            if (employee) {
+                toggleAdminModal(false);
+                try { localStorage.setItem('showLogin', 'false'); } catch (e) { }
+                currentEmployeeId = employee.id;
+                // set employee select and show employee interface
+                const userRoleDisplay = document.getElementById('userRoleDisplay');
+                if (userRoleDisplay) userRoleDisplay.textContent = employee.name;
+                // ensure employee select exists and set value
+                const employeeSelectEl = document.getElementById('employeeSelect');
+                if (employeeSelectEl) {
+                    employeeSelectEl.value = employee.id;
+                }
+                // show main app and employee interface (hide login screen)
+                const loginScreenEl = document.getElementById('loginScreen');
+                const mainAppEl = document.getElementById('mainApp');
+                if (loginScreenEl) loginScreenEl.style.display = 'none';
+                if (mainAppEl) mainAppEl.style.display = 'flex';
+
+                // Open Employee Dashboard in New Tab
+                window.employeePopup = window.open(`employee_dashboard.html?empId=${employee.id}`, '_blank');
+
+                // Keep main page on citizen interface instead of switching to employee interface
+                showInterface('citizen');
+                ensureMapInitialized('citizen');
+                updateUI();
+                // clear any target marker on input
+                try { delete document.getElementById('adminCodeInput').dataset.targetEmp; } catch (e) { }
+                showToast(`تم تسجيل الدخول كموظف: ${employee.name}`);
+                return;
+            }
+
+            showToast('رمز غير صحيح', 'danger');
+            input.value = '';
+            input.focus();
+        }
+
+        function showToast(message, type = 'success') {
+            // Remove existing toasts to prevent stacking
+            const existingToasts = document.querySelectorAll('.notification-toast');
+            existingToasts.forEach(t => t.remove());
+
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast';
+            toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--success)';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Advanced Search Modal Logic
+        let searchDebounceTimer;
+        let currentSearchRole = 'manager';
+
+        function openSearchModal(role) {
+            currentSearchRole = role;
+            document.getElementById('searchModal').style.display = 'block';
+            document.getElementById('advancedSearchInput').focus();
+        }
+
+        function closeSearchModal() {
+            document.getElementById('searchModal').style.display = 'none';
+        }
+
+        document.getElementById('advancedSearchInput').addEventListener('input', function (e) {
+            clearTimeout(searchDebounceTimer);
+            const query = e.target.value.trim();
+            const resultsContainer = document.getElementById('searchResults');
+
+            if (!query) {
+                resultsContainer.innerHTML = `
+                    <div style="text-align: center; color: #888; padding: 20px;">
+                        <i class="fas fa-search-location" style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <p>ابدأ الكتابة للبحث عن المواقع...</p>
+                    </div>`;
+                return;
+            }
+
+            searchDebounceTimer = setTimeout(async () => {
+                resultsContainer.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i> جاري البحث...</div>';
+
+                try {
+                    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+
+                    if (data && data.length > 0) {
+                        resultsContainer.innerHTML = '';
+                        data.forEach(item => {
+                            const div = document.createElement('div');
+                            div.style.cssText = 'padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;';
+                            div.innerHTML = `
+                                <div style="font-weight:bold; color:var(--primary);">${item.display_name.split(',')[0]}</div>
+                                <div style="font-size:0.85rem; color:#666;">${item.display_name}</div>
+                            `;
+                            div.onmouseover = () => div.style.background = '#f8f9fa';
+                            div.onmouseout = () => div.style.background = 'transparent';
+                            div.onclick = () => {
+                                const lat = parseFloat(item.lat);
+                                const lon = parseFloat(item.lon);
+                                const config = maps[currentSearchRole];
+                                if (config && config.instance) {
+                                    config.instance.setView([lat, lon], 16);
+                                    L.marker([lat, lon]).addTo(config.instance)
+                                        .bindPopup(item.display_name).openPopup();
+                                }
+                                closeSearchModal();
+                            };
+                            resultsContainer.appendChild(div);
+                        });
+                    } else {
+                        resultsContainer.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">لم يتم العثور على نتائج</div>';
+                    }
+                } catch (e) {
+                    console.error('Search error:', e);
+                    resultsContainer.innerHTML = '<div style="text-align:center;padding:20px;color:red;">حدث خطأ أثناء البحث</div>';
+                }
+            }, 500); // Debounce 500ms
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('searchModal');
+            if (event.target == modal) {
+                closeSearchModal();
+            }
+        }
+
+
+
+        function centerOnCurrentLocation(role = 'manager') {
+            if (!navigator.geolocation) {
+                showToast('المتصفح لا يدعم تحديد الموقع', 'danger');
+                return;
+            }
+
+            showToast('جاري تحديد موقعك...', 'info');
+
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+
+
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    // Determine which map to use based on the role argument
+                    // If role is not provided or invalid, try to guess based on visibility or default to manager
+                    let targetMap = maps[role] ? maps[role].instance : null;
+
+                    // Fallback: if specific role map not found, try to find any visible map
+                    if (!targetMap) {
+                        if (document.getElementById('citizenInterface').style.display !== 'none') {
+                            targetMap = maps.citizen.instance;
+                        } else if (document.getElementById('employeeInterface').style.display !== 'none') {
+                            targetMap = maps.employee.instance;
+                        } else {
+                            targetMap = maps.manager.instance;
+                        }
+                    }
+
+                    if (targetMap) {
+                        targetMap.setView([latitude, longitude], 16);
+
+                        // Remove existing "current location" markers if any (optional, but cleaner)
+                        // For now just add a new one
+                        const userIcon = L.divIcon({
+                            className: 'user-location-marker',
+                            html: '<div style="background-color:#2196F3;width:15px;height:15px;border-radius:50%;border:2px solid white;box-shadow:0 0 10px rgba(33,150,243,0.5);"></div>',
+                            iconSize: [20, 20]
+                        });
+
+                        L.marker([latitude, longitude], { icon: userIcon }).addTo(targetMap)
+                            .bindPopup('موقعك الحالي').openPopup();
+
+                        showToast('تم تحديد موقعك بنجاح');
+                    } else {
+                        console.error('Map instance not found for role:', role);
+                    }
+                },
+                (error) => {
+                    console.error('Geolocation error:', error);
+                    let msg = 'تعذر الحصول على الموقع';
+                    if (error.code === 1) msg = 'يرجى السماح بتحديد الموقع من إعدادات المتصفح';
+                    else if (error.code === 2) msg = 'الموقع غير متاح حالياً، تأكد من تفعيل GPS';
+                    else if (error.code === 3) msg = 'انتهت مهلة تحديد الموقع، حاول مرة أخرى';
+
+                    showToast(msg, 'danger');
+                },
+                options
+            );
+        }
+
+        async function searchGlobalLocation(source = 'manager') {
+            let inputId = 'globalSearchInput';
+            if (source === 'emp') inputId = 'globalSearchInputEmp';
+            if (source === 'citizen') inputId = 'globalSearchInputCitizen';
+
+            const query = document.getElementById(inputId).value;
+            if (!query) {
+                showToast('يرجى إدخال اسم الموقع', 'danger');
+                return;
+            }
+
+            showToast('جاري البحث...', 'info');
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data && data.length > 0) {
+                    const { lat, lon, display_name } = data[0];
+                    const latitude = parseFloat(lat);
+                    const longitude = parseFloat(lon);
+
+                    // Determine active map
+                    let targetMap = null;
+                    if (document.getElementById('managerInterface').style.display !== 'none') {
+                        targetMap = maps.manager.instance;
+                    } else if (document.getElementById('employeeInterface').style.display !== 'none') {
+                        targetMap = maps.employee.instance;
+                    } else if (document.getElementById('citizenInterface').style.display !== 'none') {
+                        targetMap = maps.citizen.instance;
+                    }
+
+                    if (targetMap) {
+                        targetMap.setView([latitude, longitude], 13);
+                        L.marker([latitude, longitude]).addTo(targetMap)
+                            .bindPopup(display_name).openPopup();
+                        showToast('تم العثور على الموقع');
+                    } else {
+                        // Default to manager map if logic fails
+                        if (maps.manager.instance) {
+                            maps.manager.instance.setView([latitude, longitude], 13);
+                            L.marker([latitude, longitude]).addTo(maps.manager.instance)
+                                .bindPopup(display_name).openPopup();
+                        }
+                    }
+                } else {
+                    showToast('لم يتم العثور على الموقع', 'error');
+                }
+            } catch (e) {
+                console.error('Search error:', e);
+                showToast('حدث خطأ أثناء البحث', 'error');
+            }
+        }
+
+        function adjustManagerZoom(direction) {
+            const mapInstance = maps.manager.instance;
+            if (!mapInstance) {
+                return;
+            }
+            mapInstance.setZoom(mapInstance.getZoom() + direction);
+        }
+
+        window.updateScheduleStatus = updateScheduleStatus;
+        window.deleteEmployee = deleteEmployee;
+        window.editEmployee = editEmployee;
+
+        function persistAll() {
+            localStorage.setItem(STORAGE_KEYS.employees, JSON.stringify(employees));
+            localStorage.setItem(STORAGE_KEYS.areas, JSON.stringify(areas));
+            localStorage.setItem(STORAGE_KEYS.schedules, JSON.stringify(schedules));
+        }
+
+        let drawMode = null;
+        let drawPoints = [];
+        let drawLayer = null;
+
+        function setDrawMode(mode) {
+            drawMode = mode;
+            drawPoints = [];
+            if (drawLayer && window.drawMap) {
+                window.drawMap.removeLayer(drawLayer);
+            }
+            drawLayer = null;
+            window.drawnLayer = null;
+
+            const container = document.getElementById('drawMapContainer');
+
+            document.getElementById('drawPointBtn').style.opacity = mode === 'point' ? '1' : '0.6';
+            document.getElementById('drawLineBtn').style.opacity = mode === 'line' ? '1' : '0.6';
+            document.getElementById('drawPolygonBtn').style.opacity = mode === 'polygon' ? '1' : '0.6';
+
+            if (container) {
+                if (mode === 'point') {
+                    container.style.cursor = 'crosshair';
+                } else if (mode === 'line') {
+                    container.style.cursor = 'url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDI0IiBoZWlnaHQ9IjI0MjQiIHZpZXdCb3g9IjAgMCAyNDI0IDI0MjQiPjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIiBkPSJNMTIwMCAxMjAwbDEyMDAtMTIwMG0wIDI0MDBsLTEyMDAtMTIwMCIvPjwvc3ZnPg==") 12 12, auto';
+                } else if (mode === 'polygon') {
+                    container.style.cursor = 'cell';
+                } else {
+                    container.style.cursor = 'default';
+                }
+            }
+
+            showToast(`تم تفعيل وضع الرسم: ${mode === 'point' ? 'نقطة' : mode === 'line' ? 'خط' : 'مضلع'}`);
+        }
+
+        function clearDrawing() {
+            drawPoints = [];
+            if (drawLayer && window.drawMap) {
+                window.drawMap.removeLayer(drawLayer);
+            }
+            drawLayer = null;
+            window.drawnLayer = null;
+            window.drawnGeoJSON = null;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const drawPointBtn = document.getElementById('drawPointBtn');
+            const drawLineBtn = document.getElementById('drawLineBtn');
+            const drawPolygonBtn = document.getElementById('drawPolygonBtn');
+
+            if (drawPointBtn) drawPointBtn.onclick = function () { setDrawMode('point'); };
+            if (drawLineBtn) drawLineBtn.onclick = function () { setDrawMode('line'); };
+            if (drawPolygonBtn) drawPolygonBtn.onclick = function () { setDrawMode('polygon'); };
+
+            // About Modal Logic
+            const aboutBtn = document.getElementById('aboutBtn');
+            const aboutModal = document.getElementById('aboutModal');
+            const closeAboutModal = document.getElementById('closeAboutModal');
+
+            if (aboutBtn && aboutModal) {
+                aboutBtn.addEventListener('click', () => {
+                    aboutModal.style.display = 'flex';
+                });
+            }
+
+            if (closeAboutModal && aboutModal) {
+                closeAboutModal.addEventListener('click', () => {
+                    aboutModal.style.display = 'none';
+                });
+            }
+
+            // Close modal when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === aboutModal) {
+                    aboutModal.style.display = 'none';
+                }
+            });
+        });
+
+
+
+        // Fallback: Listen for storage events (if window.opener fails)
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'drawnData' && event.newValue) {
+                try {
+                    const data = JSON.parse(event.newValue);
+                    window.handleDrawData(data);
+                } catch (e) {
+                    console.error('Error parsing drawnData:', e);
+                }
+            } else if (event.key === STORAGE_KEYS.areas) {
+                // Refresh areas if updated externally (e.g. from draw_map.html)
+                const stored = localStorage.getItem(STORAGE_KEYS.areas);
+                if (stored) {
+                    areas = JSON.parse(stored);
+                    updateUI();
+                }
+            }
+        });
+
+        // New Tab Drawing Handler (Global)
+        window.handleDrawData = function (data) {
+            if (!data) return;
+
+            // If manager popup is open, send data there
+            if (window.managerPopup && !window.managerPopup.closed) {
+                if (window.managerPopup.updateCoordinates) {
+                    window.managerPopup.updateCoordinates(data.lat, data.lng, data.geoJSON);
+                    showToast('✓ تم إرسال الرسم إلى لوحة التحكم');
+                }
+            }
+
+            const xInput = document.getElementById('areaCoordX');
+            const yInput = document.getElementById('areaCoordY');
+
+            if (xInput && yInput) {
+                xInput.value = data.lng.toFixed(6);
+                yInput.value = data.lat.toFixed(6);
+                window.drawnGeoJSON = data.geoJSON;
+
+                // Show the fields so user knows data arrived
+                const coordsFields = document.getElementById('areaCoordsFields');
+                if (coordsFields) coordsFields.style.display = 'block';
+
+                showToast('✓ تم استلام الرسم');
+
+                // Clear the storage to allow triggering again with same data if needed
+                localStorage.removeItem('drawnData');
+            }
+        };
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+        // Sidebar Toggle Logic
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        if (sidebarToggle && sidebar && sidebarOverlay) {
+            function toggleSidebar() {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+                const icon = sidebarToggle.querySelector('i');
+                if (sidebar.classList.contains('active')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            }
+
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+        }
+
+        // Start Real-time Sync
+        startRealtimeSync(updateUI);
+    </script>
+</body>
+
+</html>

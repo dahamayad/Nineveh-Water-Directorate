@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رسم منطقة أو معلم</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            color: #4facfe;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .top-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            background: rgba(30, 41, 59, 0.95);
+            padding: 10px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.active {
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.5);
+        }
+
+        .tool-group {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tool-group label {
+            display: block;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .tool-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .tool-btn {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+        }
+
+        .tool-btn i {
+            font-size: 1.2rem;
+        }
+
+        .tool-btn:hover {
+            background: rgba(52, 152, 219, 0.2);
+            border-color: #3498db;
+        }
+
+        .tool-btn.active {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border-color: #3498db;
+        }
+
+        .color-picker-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+        }
+
+        input[type="color"] {
+            opacity: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .range-value {
+            text-align: center;
+            color: #4facfe;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        select option {
+            background: #1e293b;
+            color: white;
+        }
+
+        .existing-label {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .tool-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <h3><i class="fas fa-tools"></i> أدوات الرسم</h3>
+
+        <!-- Area Selection Dropdown -->
+        <div class="tool-group">
+            <label>اختر منطقة للتعديل</label>
+            <select id="areaSelect">
+                <option value="">-- جديد --</option>
+            </select>
+        </div>
+
+        <!-- Drawing Tools -->
+        <div class="tool-group">
+            <label>نوع الرسم</label>
+            <div class="tool-buttons">
+                <button class="tool-btn" id="drawPointBtn">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>نقطة</span>
+                </button>
+                <button class="tool-btn" id="drawLineBtn">
+                    <i class="fas fa-chart-line"></i>
+                    <span>خط</span>
+                </button>
+                <button class="tool-btn" id="drawPolygonBtn">
+                    <i class="fas fa-draw-polygon"></i>
+                    <span>مضلع</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Shape Properties -->
+        <div class="tool-group">
+            <label>خصائص الشكل</label>
+
+            <label style="margin-top: 10px;">لون الخط / الحدود</label>
+            <div class="color-picker-group">
+                <div class="color-preview" id="lineColorPreview" style="background-color: #3b82f6;"></div>
+                <input type="color" id="lineColor" value="#3b82f6">
+            </div>
+
+            <label style="margin-top: 15px;">سمك الخط: <span class="range-value" id="lineWidthValue">3 px</span></label>
+            <input type="range" id="lineWidth" min="1" max="10" value="3">
+
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+        <script>
+            const DEFAULT_CENTER = [36.3489, 43.1577]; // Mosul
+            let map, drawLayer, drawMode, editingAreaId = null;
+            let drawPoints = [];
+            let currentLineColor = '#3b82f6';
+            let currentLineWidth = 3;
+            let currentFillColor = '#3b82f6';
+
+            function initMap() {
+                map = L.map('map').setView(DEFAULT_CENTER, 13);
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '© Esri'
+                }).addTo(map);
+
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}').addTo(map);
+
+                map.on('click', onMapClick);
+                map.on('mouseup', saveDraft);
+                map.on('click', () => setTimeout(saveDraft, 100));
+
+                loadExistingAreas();
+                populateAreaSelect();
+                loadDraft();
+            }
+
+            function populateAreaSelect() {
+                const select = document.getElementById('areaSelect');
+                const areas = JSON.parse(localStorage.getItem('waterAreas')) || [];
+
+                select.innerHTML = '<option value="">-- جديد --</option>';
+
+                areas.forEach(area => {
+                    const option = document.createElement('option');
+                    option.value = area.id;
+                    option.textContent = area.name;
+                    select.appendChild(option);
+                });
+            }
+
+            document.getElementById('areaSelect').onchange = function () {
+                const areaId = Number(this.value);
+                if (!areaId) {
+                    editingAreaId = null;
+                    if (drawLayer) map.removeLayer(drawLayer);
+                    drawPoints = [];
+                    return;
+                }
+
+                const areas = JSON.parse(localStorage.getItem('waterAreas')) || [];
+                const area = areas.find(a => a.id === areaId);
+
+                if (!area) return;
+
+                editingAreaId = areaId;
+
+                if (drawLayer) map.removeLayer(drawLayer);
+                drawPoints = [];
+
+                if (area.geojson) {
+                    const gj = area.geojson;
+
+                    if (gj.type === 'Point') {
+                        setDrawMode('point');
+                        const latlng = L.latLng(gj.coordinates[1], gj.coordinates[0]);
+                        drawLayer = L.marker(latlng, { draggable: true }).addTo(map);
+                        drawPoints = [latlng];
+                        map.setView(latlng, 15);
+                    } else if (gj.type === 'LineString') {
+                        setDrawMode('line');
+                        const latlngs = gj.coordinates.map(c => L.latLng(c[1], c[0]));
+                        drawLayer = L.polyline(latlngs, {
+                            color: currentLineColor,
+                            weight: currentLineWidth
+                        }).addTo(map);
+                        drawPoints = latlngs;
+                        map.fitBounds(drawLayer.getBounds());
+                    } else if (gj.type === 'Polygon') {
+                        setDrawMode('polygon');
+                        const latlngs = gj.coordinates[0].map(c => L.latLng(c[1], c[0]));
+                        drawLayer = L.polygon(latlngs, {
+                            color: currentLineColor,
+                            weight: currentLineWidth,
+                            fillColor: currentFillColor,
+                            fillOpacity: 0.3
+                        }).addTo(map);
+                        drawPoints = latlngs;
+                        map.fitBounds(drawLayer.getBounds());
+                    }
+                } else if (area.lat && area.lng) {
+                    setDrawMode('point');
+                    const latlng = L.latLng(area.lat, area.lng);
+                    drawLayer = L.marker(latlng, { draggable: true }).addTo(map);
+                    drawPoints = [latlng];
+                    map.setView(latlng, 15);
+                }
+            };
+
+            function loadExistingAreas() {
+                try {
+                    const areas = JSON.parse(localStorage.getItem('waterAreas')) || [];
+                    areas.forEach(area => {
+                        if (area.geojson) {
+                            const gj = area.geojson;
+                            if (gj.type === 'Point') {
+                                L.marker([gj.coordinates[1], gj.coordinates[0]], { opacity: 0.5 })
+                                    .bindTooltip(area.name, { permanent: true, direction: 'top', className: 'existing-label' })
+                                    .addTo(map);
+                            } else if (gj.type === 'LineString') {
+                                L.polyline(gj.coordinates.map(c => [c[1], c[0]]), { color: '#666', weight: 2, dashArray: '5, 5' })
+                                    .bindTooltip(area.name, { permanent: true, direction: 'center', className: 'existing-label' })
+                                    .addTo(map);
+                            } else if (gj.type === 'Polygon') {
+                                L.polygon(gj.coordinates[0].map(c => [c[1], c[0]]), { color: '#666', weight: 1, fillColor: '#999', fillOpacity: 0.2 })
+                                    .bindTooltip(area.name, { permanent: true, direction: 'center', className: 'existing-label' })
+                                    .addTo(map);
+                            }
+                        } else if (area.lat && area.lng) {
+                            L.marker([area.lat, area.lng], { opacity: 0.5 })
+                                .bindTooltip(area.name, { permanent: true, direction: 'top', className: 'existing-label' })
+                                .addTo(map);
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error loading existing areas:', e);
+                }
+            }
+
+            function saveDraft() {
+                if (drawLayer && drawMode) {
+                    const draft = {
+                        mode: drawMode,
+                        latlngs: drawMode === 'point' ? drawLayer.getLatLng() : drawLayer.getLatLngs(),
+                        editingAreaId: editingAreaId
+                    };
+                    localStorage.setItem('drawingDraft', JSON.stringify(draft));
+                } else {
+                    localStorage.removeItem('drawingDraft');
+                }
+            }
+
+            function loadDraft() {
+                const draftStr = localStorage.getItem('drawingDraft');
+                if (draftStr) {
+                    try {
+                        const draft = JSON.parse(draftStr);
+                        editingAreaId = draft.editingAreaId || null;
+
+                        setDrawMode(draft.mode);
+                        if (draft.mode === 'point') {
+                            drawLayer = L.marker(draft.latlngs, { draggable: true }).addTo(map);
+                            drawPoints = [draft.latlngs];
+                        } else if (draft.mode === 'line') {
+                            drawLayer = L.polyline(draft.latlngs, {
+                                color: currentLineColor,
+                                weight: currentLineWidth
+                            }).addTo(map);
+                            drawPoints = draft.latlngs;
+                        } else if (draft.mode === 'polygon') {
+                            let points = draft.latlngs;
+                            if (Array.isArray(points[0]) && !points[0].lat) {
+                                points = points[0];
+                            }
+                            drawLayer = L.polygon(points, {
+                                color: currentLineColor,
+                                weight: currentLineWidth,
+                                fillColor: currentFillColor,
+                                fillOpacity: 0.3
+                            }).addTo(map);
+                            drawPoints = points;
+                        }
+                    } catch (e) {
+                        console.error('Error loading draft:', e);
+                    }
+                }
+            }
+
+            function setDrawMode(mode) {
+                drawMode = mode;
+                if (!editingAreaId) {
+                    drawPoints = [];
+                    if (drawLayer) map.removeLayer(drawLayer);
+                    drawLayer = null;
+                }
+
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                if (mode === 'point') document.getElementById('drawPointBtn').classList.add('active');
+                if (mode === 'line') document.getElementById('drawLineBtn').classList.add('active');
+                if (mode === 'polygon') document.getElementById('drawPolygonBtn').classList.add('active');
+
+                document.getElementById('map').style.cursor = 'crosshair';
+            }
+
+            function onMapClick(e) {
+                if (!drawMode) return;
+
+                if (drawMode === 'point') {
+                    if (drawLayer) map.removeLayer(drawLayer);
+                    drawLayer = L.marker(e.latlng, { draggable: true }).addTo(map);
+                    drawPoints = [e.latlng];
+                } else if (drawMode === 'line') {
+                    drawPoints.push(e.latlng);
+                    if (drawLayer) map.removeLayer(drawLayer);
+                    drawLayer = L.polyline(drawPoints, {
+                        color: currentLineColor,
+                        weight: currentLineWidth
+                    }).addTo(map);
+                } else if (drawMode === 'polygon') {
+                    drawPoints.push(e.latlng);
+                    if (drawLayer) map.removeLayer(drawLayer);
+                    drawLayer = L.polygon(drawPoints, {
+                        color: currentLineColor,
+                        weight: currentLineWidth,
+                        fillColor: currentFillColor,
+                        fillOpacity: 0.3
+                    }).addTo(map);
+                }
+            }
+
+            // Color and style controls
+            document.getElementById('lineColorPreview').onclick = () => document.getElementById('lineColor').click();
+            document.getElementById('lineColor').oninput = (e) => {
+                currentLineColor = e.target.value;
+                document.getElementById('lineColorPreview').style.backgroundColor = currentLineColor;
+                if (drawLayer && drawMode !== 'point') {
+                    drawLayer.setStyle({ color: currentLineColor });
+                }
+            };
+
+            document.getElementById('fillColorPreview').onclick = () => document.getElementById('fillColor').click();
+            document.getElementById('fillColor').oninput = (e) => {
+                currentFillColor = e.target.value;
+                document.getElementById('fillColorPreview').style.backgroundColor = currentFillColor;
+                if (drawLayer && drawMode === 'polygon') {
+                    drawLayer.setStyle({ fillColor: currentFillColor });
+                }
+            };
+
+            document.getElementById('lineWidth').oninput = (e) => {
+                currentLineWidth = parseInt(e.target.value);
+                document.getElementById('lineWidthValue').textContent = currentLineWidth + ' px';
+                if (drawLayer && drawMode !== 'point') {
+                    drawLayer.setStyle({ weight: currentLineWidth });
+                }
+            };
+
+            document.getElementById('drawPointBtn').onclick = () => setDrawMode('point');
+            document.getElementById('drawLineBtn').onclick = () => setDrawMode('line');
+            document.getElementById('drawPolygonBtn').onclick = () => setDrawMode('polygon');
+
+            document.getElementById('saveBtn').onclick = () => {
+                try {
+                    if (!drawLayer) {
+                        alert('يرجى رسم شكل أولاً');
+                        return;
+                    }
+
+                    let geoJSON = null;
+                    let centerLat, centerLng;
+
+                    if (drawMode === 'point') {
+                        const ll = drawLayer.getLatLng();
+                        geoJSON = { type: 'Point', coordinates: [ll.lng, ll.lat] };
+                        centerLat = ll.lat;
+                        centerLng = ll.lng;
+                    } else if (drawMode === 'line') {
+                        const lls = drawLayer.getLatLngs();
+                        geoJSON = { type: 'LineString', coordinates: lls.map(p => [p.lng, p.lat]) };
+                        centerLat = lls[0].lat;
+                        centerLng = lls[0].lng;
+                    } else if (drawMode === 'polygon') {
+                        const lls = drawLayer.getLatLngs()[0];
+                        geoJSON = { type: 'Polygon', coordinates: [lls.map(p => [p.lng, p.lat])] };
+                        centerLat = lls[0].lat;
+                        centerLng = lls[0].lng;
+                    }
+
+                    const data = {
+                        geoJSON: geoJSON,
+                        lat: centerLat,
+                        lng: centerLng,
+                        editingAreaId: editingAreaId
+                    };
+
+                    if (editingAreaId) {
+                        const areas = JSON.parse(localStorage.getItem('waterAreas')) || [];
+                        const areaIndex = areas.findIndex(a => a.id === editingAreaId);
+
+                        if (areaIndex !== -1) {
+                            areas[areaIndex].geojson = geoJSON;
+                            areas[areaIndex].lat = centerLat;
+                            areas[areaIndex].lng = centerLng;
+                            localStorage.setItem('waterAreas', JSON.stringify(areas));
+
+                            alert('تم تحديث المنطقة بنجاح');
+                            localStorage.removeItem('drawingDraft');
+                            window.close();
+                            return;
+                        }
+                    }
+
+                    let success = false;
+
+                    if (window.opener && !window.opener.closed && typeof window.opener.handleDrawData === 'function') {
+                        try {
+                            window.opener.handleDrawData(data);
+                            success = true;
+                        } catch (e) {
+                            console.warn('window.opener call failed:', e);
+                        }
+                    }
+
+                    if (!success) {
+                        try {
+                            localStorage.setItem('drawnData', JSON.stringify(data));
+                            success = true;
+                        } catch (e) {
+                            console.error('localStorage fallback failed:', e);
+                            alert('فشل الحفظ: ' + e.message);
+                            return;
+                        }
+                    }
+
+                    if (success) {
+                        localStorage.removeItem('drawingDraft');
+                        window.close();
+                    } else {
+                        alert('تعذر الاتصال بالصفحة الرئيسية.');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('حدث خطأ أثناء الحفظ: ' + e.message);
+                }
+            };
+
+            document.getElementById('cancelBtn').onclick = () => window.close();
+
+            initMap();
+        </script>
+</body>
+
+</html>
